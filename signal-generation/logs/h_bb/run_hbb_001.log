@@ -1,0 +1,240 @@
+=== run_superchic_signal: preparing init inputs ===
+No cached init inputs found. Running init for key b6ade70c49cdbcf37c05468aa7de7d6fa9bfe29d...
+LHAPDF 6.4.0 loading /cvmfs/cms.cern.ch/el9_amd64_gcc12/external/lhapdf/6.4.0-e7c4b9323f96fa15c22775e405ec99ed/share/LHAPDF/NNPDF31_nnlo_as_0118/NNPDF31_nnlo_as_0118_0000.dat
+NNPDF31_nnlo_as_0118 PDF set, member #0, version 1; LHAPDF ID = 303600
+LHAPDF 6.4.0 loading /home/mstamenk/superchic-test/CMSSW_15_0_0/src/SuperChic/build/unpacked/SF/SF_MSHT20qed_nnlo/SF_MSHT20qed_nnlo_0000.dat
+SF_MSHT20qed_nnlo PDF set, member #0, version 1
+Thanks for using LHAPDF 6.4.0. Please make sure to cite the paper:
+  Eur.Phys.J. C75 (2015) 3, 132  (http://arxiv.org/abs/1412.7420)
+ Calculating opacity...
+ Done!
+ Calculating screening amplitude...
+ Done!
+ Reading data from(env. var.)/home/mstamenk/superchic-test/CMSSW_15_0_0/src/SuperChic/install/share/SuperChic
+ Calculating S^2 (Evolution + Evolution)...
+ Calculating S^2 (Elastic + Evolution)...
+ Calculating S^2 (Inelastic + Evolution)...
+ Calculating Sudakov factor...
+ Done!
+ Calculating Skewed PDF...
+ Done!
+ Now run ./superchic
+=== run_superchic_signal: running superchic ===
+LHAPDF 6.4.0 loading /cvmfs/cms.cern.ch/el9_amd64_gcc12/external/lhapdf/6.4.0-e7c4b9323f96fa15c22775e405ec99ed/share/LHAPDF/NNPDF31_nnlo_as_0118/NNPDF31_nnlo_as_0118_0000.dat
+NNPDF31_nnlo_as_0118 PDF set, member #0, version 1; LHAPDF ID = 303600
+ [calc_tau_coeff] can only be true for tau tau - set to false
+ ***********************************************                                 
+ **************  Superchic v5.6.2 ***************                                
+ ***********************************************                                 
+ *   v5.6.2                     DATE  30.06.2024 *                               
+ *                                             *                                 
+ * Author: Lucian Harland-Lang                 *                                 
+ * (l.harland-lang@ucl.ac.uk)                  *                                 
+ *                                             *                                 
+ * For details see                             *                                 
+ *                                             *                                 
+ * arXiv 2303.04826 (ion dissociation)         *                                 
+ * arXiv 2201.08403 (WW updates)               *                                 
+ * arXiv 2007.12704 (v4 updates)               *                                 
+ * arXiv 1812.04886 (SUSY)                     *                                 
+ * arXiv 1810.06567                            *                                 
+ * arXiv 1508.02718                            *                                 
+ * arXiv 1405.0018 (review)                    *                                 
+ * arXiv 1005.0695 (quarkonia and diphoton)    *                                 
+ * arXiv 1011.0680 (quarkonia)                 *                                 
+ * arXiv 1105.1626 (meson pairs)               *                                 
+ * arXiv 1302.2004 (meson pairs - eta/eta')    *                                 
+ * arXiv 1306.6661 (Skewed PDF)                *                                 
+ * arXiv 1306.2149 (Skewed PDF)                *                                 
+ *                                             *                                 
+ *  Available at :                             *                                 
+ *  http:://projects.hepforge.org/superchic    *                                 
+ *  https://github.com/LucianHL/SuperChic      *                                 
+ ***********************************************                                 
+                                                                                 
+ **********************************************************        **************
+ * Higgs Boson --> bbar production (prot beam)
+ ************************************************************************
+ 
+ ********************  Input parameters *********************************
+ *              13600.0000         :  CMS collision energy (GeV)
+ *                       4         :  Model of soft survival
+ *               in136_hbb         :  input file
+ *    NNPDF31_nnlo_as_0118         :  PDF set
+ *                       0         :  PDF member
+ *                       1         :  Process number
+ *             hbb_001.dat         :  Output file
+ *                       T         :  Include soft survival effects
+ ************************************************************************
+ *                     el          : Dissociation flag
+ ************************************************************************
+ 
+ ********************* Integration parameters  **************************
+ *                   10000         :  Preconditioning calls
+ *                      10         :  Preconditioning iterations
+ *                  1.0000         :  Percentage accuracy
+ *                   10000         :  Calls in first main iteration
+ *                   10000         :  Increase calls per iteration
+ *                    1000         :  Maximum number of iterations
+ *                    1001         :  Random number seed
+ ************************************************************************
+ *                       8         : Survival factor integration par.
+ ************************************************************************
+ 
+ ********************* Unweighted Events  *******************************
+ *                       T         :  Generate unweighted events
+ *                   10000         :  Number of events
+ *                     lhe         : Record format
+ ************************************************************************
+ 
+ ********************* General Cuts *************************************
+ *                 -2.5000         :  Minimum object rapidity
+ *                  2.5000         :  Maximum object rapidity
+ *                 46.0000         :  Minimum object mass
+ *             100000.0000         :  Maximum object mass
+ *                       T         :  Include further cuts
+ *                       T         :  Include spin correlations
+ ************************************************************************
+ 
+ ***************** 2-body decay cuts ************************************
+ *                  1.0000         :  pT(a) min
+ *                  1.0000         :  pT(b) min
+ *                 -3.0000         :  eta(a) min
+ *                  3.0000         :  eta(a) max
+ *                 -3.0000         :  eta(b) min
+ *                  3.0000         :  eta(b) max
+ ************************************************************************
+ 
+ Reading data from(env. var.)/home/mstamenk/superchic-test/CMSSW_15_0_0/src/SuperChic/install/share/SuperChic
+ 
+ ************************************************************************
+                 Vegas: initialisation run                
+                 Note : outputs *bare* cross section only 
+ ************************************************************************
+
+
+ ******************* Integration by Vegas ************************
+ ********************     8192   calls   *************************
+ *                                                               *
+ *             integral = 0.195156E-01 +/-  0.116878E-03         *
+ *      accum. integral = 0.195156E-01 +/-  0.116878E-03         *
+ *            precision = 0.598895     %                         *
+ *           max weight =  0.00000                               *
+ *                                                               *
+ ******************* chi**2/iteration = 0.000    *****************
+
+
+ ******************* Integration by Vegas ************************
+ ********************     8192   calls   *************************
+ *                                                               *
+ *             integral = 0.194710E-01 +/-  0.724813E-04         *
+ *      accum. integral = 0.194834E-01 +/-  0.616295E-04         *
+ *            precision = 0.316317     %                         *
+ *           max weight =  0.00000                               *
+ *                                                               *
+ ******************* chi**2/iteration =0.1054    *****************
+
+
+ ******************* Integration by Vegas ************************
+ ********************     8192   calls   *************************
+ *                                                               *
+ *             integral = 0.193855E-01 +/-  0.673773E-04         *
+ *      accum. integral = 0.194391E-01 +/-  0.455059E-04         *
+ *            precision = 0.234095     %                         *
+ *           max weight =  0.00000                               *
+ *                                                               *
+ ******************* chi**2/iteration =0.6261    *****************
+
+
+ ******************* Integration by Vegas ************************
+ ********************     8192   calls   *************************
+ *                                                               *
+ *             integral = 0.193546E-01 +/-  0.667369E-04         *
+ *      accum. integral = 0.194125E-01 +/-  0.376107E-04         *
+ *            precision = 0.193745     %                         *
+ *           max weight =  0.00000                               *
+ *                                                               *
+ ******************* chi**2/iteration =0.7818    *****************
+
+
+ ******************* Integration by Vegas ************************
+ ********************     8192   calls   *************************
+ *                                                               *
+ *             integral = 0.194538E-01 +/-  0.663562E-04         *
+ *      accum. integral = 0.194225E-01 +/-  0.327187E-04         *
+ *            precision = 0.168457     %                         *
+ *           max weight =  0.00000                               *
+ *                                                               *
+ ******************* chi**2/iteration =0.6595    *****************
+
+
+ ******************* Integration by Vegas ************************
+ ********************     8192   calls   *************************
+ *                                                               *
+ *             integral = 0.193838E-01 +/-  0.678719E-04         *
+ *      accum. integral = 0.194153E-01 +/-  0.294746E-04         *
+ *            precision = 0.151812     %                         *
+ *           max weight =  0.00000                               *
+ *                                                               *
+ ******************* chi**2/iteration =0.5809    *****************
+
+
+ ******************* Integration by Vegas ************************
+ ********************     8192   calls   *************************
+ *                                                               *
+ *             integral = 0.193360E-01 +/-  0.662942E-04         *
+ *      accum. integral = 0.194023E-01 +/-  0.269355E-04         *
+ *            precision = 0.138826     %                         *
+ *           max weight =  0.00000                               *
+ *                                                               *
+ ******************* chi**2/iteration =0.6824    *****************
+
+
+ ******************* Integration by Vegas ************************
+ ********************     8192   calls   *************************
+ *                                                               *
+ *             integral = 0.193801E-01 +/-  0.671655E-04         *
+ *      accum. integral = 0.193992E-01 +/-  0.250006E-04         *
+ *            precision = 0.128875     %                         *
+ *           max weight =  0.00000                               *
+ *                                                               *
+ ******************* chi**2/iteration =0.5986    *****************
+
+
+ ******************* Integration by Vegas ************************
+ ********************     8192   calls   *************************
+ *                                                               *
+ *             integral = 0.193813E-01 +/-  0.677875E-04         *
+ *      accum. integral = 0.193971E-01 +/-  0.234565E-04         *
+ *            precision = 0.120928     %                         *
+ *           max weight =  0.00000                               *
+ *                                                               *
+ ******************* chi**2/iteration =0.5316    *****************
+
+
+ ******************* Integration by Vegas ************************
+ ********************     8192   calls   *************************
+ *                                                               *
+ *             integral = 0.193308E-01 +/-  0.680457E-04         *
+ *      accum. integral = 0.193901E-01 +/-  0.221765E-04         *
+ *            precision = 0.114370     %                         *
+ *           max weight =  0.00000                               *
+ *                                                               *
+ ******************* chi**2/iteration =0.5664    *****************
+ 
+ ************************************************************************
+                 Vegas : main run                
+ ************************************************************************
+ 
+ ************************************************************************
+ 
+ Cut Efficiency =  91.44    %
+ 
+ => multiply NCALL by    1
+ 
+ ************************************************************************
+ 
+
+
+ ******************* Integration by Vegas ************************
+ ********************     8192   calls   *************************

@@ -25,7 +25,7 @@ If `CMSSW_15_0_0` already exists on your machine, reuse it.
 ## 2) Download and build SuperChic (online)
 
 ```bash
-cd /home/mstamenk/superchic/CMSSW_15_0_0/src
+cd CMSSW_15_0_0/src
 git clone https://github.com/LucianHL/SuperChic.git
 cd SuperChic
 
@@ -39,8 +39,9 @@ cmake -S . -B build \
   -DLHAPDF_DIR="$LHAPDF_PREFIX"
 cmake --build build -j 8
 cmake --install build
-
-source env_setup.sh
+if [[ -f env_setup.sh ]]; then
+  source env_setup.sh
+fi
 ```
 
 If CMake reports:
@@ -52,7 +53,7 @@ check that `lhapdf-config` is visible (`which lhapdf-config`) and rerun with `-D
 ## 3) Setup this repo
 
 ```bash
-cd /home/mstamenk/superchic/CMSSW_15_0_0/src/higgs-cep-studies
+cd CMSSW_15_0_0/src/higgs-cep-studies
 source setup_env.sh
 ```
 
@@ -61,6 +62,7 @@ source setup_env.sh
 - `HIGGS_BKG_DIR`
 - `HIGGS_ANALYSIS_DIR`
 - `SUPERCHIC_DIR`
+- `LHAPDF_DATA_PATH` (including SuperChic `SF/` grids required by `init`)
 
 ## 4) Typical workflow
 

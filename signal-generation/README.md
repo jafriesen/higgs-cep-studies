@@ -4,11 +4,10 @@ Signal-generation instructions using an **external** SuperChic checkout.
 
 ## Contents
 
-- `scripts/run_superchic_signal.sh` - runs one SuperChic job (`h_bb` or `qcd_bb`) using cards from `${SUPERCHIC_DIR}`.
+- `scripts/run_superchic_signal.sh` - runs one SuperChic job (`h_bb` or `qcd_bb`) using local templates by default.
+- `templates/` - default card templates (`h_bb_template.DAT`, `qcd_bb_template.DAT`).
 - `output/` - produced files, grouped by process/tag.
 - `logs/` - per-job logs.
-
-No SuperChic source/cards are stored in this repo.
 
 ## Setup
 
@@ -25,12 +24,18 @@ cd signal-generation/scripts
 ```
 
 Default card for `h_bb`:
-- `${SUPERCHIC_DIR}/bin/h_bb/h_bb.DAT`
+- `signal-generation/templates/h_bb_template.DAT`
+- fallback: `${SUPERCHIC_DIR}/bin/h_bb/h_bb.DAT`, then `${SUPERCHIC_DIR}/Cards/h_bb.DAT`
 
 The wrapper patches these entries in a temporary card copy:
 - `[outtg]`
 - `[iseed]`
 - `[nev]`
+
+The wrapper also runs `init` automatically when needed (for the card's
+`[rts]`, `[isurv]`, `[intag]`, `[PDFname]`, `[PDFmember]` combination) and
+caches the generated `inputs/` files under:
+- `signal-generation/workspace/init_cache/`
 
 Output location:
 - `signal-generation/output/h_bb/<out-tag>/`
