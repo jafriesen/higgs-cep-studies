@@ -29,12 +29,25 @@ cd /home/mstamenk/superchic/CMSSW_15_0_0/src
 git clone https://github.com/LucianHL/SuperChic.git
 cd SuperChic
 
-cmake -S . -B build -DCMAKE_INSTALL_PREFIX="$PWD/install"
+# Ensure CMSSW runtime is active in the current shell
+cmsenv
+
+# In CMSSW, pass LHAPDF explicitly so CMake can find include/lib/data paths
+LHAPDF_PREFIX="$(lhapdf-config --prefix)"
+cmake -S . -B build \
+  -DCMAKE_INSTALL_PREFIX="$PWD/install" \
+  -DLHAPDF_DIR="$LHAPDF_PREFIX"
 cmake --build build -j 8
 cmake --install build
 
 source env_setup.sh
 ```
+
+If CMake reports:
+
+`Could NOT find LHAPDF (missing: LHAPDF_INCLUDE_DIR LHAPDF_PATH LHAPDF_DATA_PATH)`
+
+check that `lhapdf-config` is visible (`which lhapdf-config`) and rerun with `-DLHAPDF_DIR="$(lhapdf-config --prefix)"` as above.
 
 ## 3) Setup this repo
 
