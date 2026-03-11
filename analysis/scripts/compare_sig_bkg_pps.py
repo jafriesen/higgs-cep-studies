@@ -231,14 +231,18 @@ def main():
     default_sig_root = os.path.join(
         os.environ.get("HIGGS_SIGNAL_DIR", os.path.join(study_dir, "signal-generation")),
         "output",
+        "h_bb",
         "hbb_001",
+        "evrecs",
         "evrec_hbb_001.root",
     )
     default_bkg_root = os.path.join(
         os.environ.get("HIGGS_BKG_DIR", os.path.join(study_dir, "bkg-generation")),
         "output",
-        "minbias",
-        "minbias_pairs.root",
+        "qcd_bb",
+        "qcd_001",
+        "evrecs",
+        "evrec_qcd_001.root",
     )
 
     if args.sig_root is None:

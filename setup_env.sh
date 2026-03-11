@@ -26,6 +26,8 @@ eval "$(scram runtime -sh)"
 
 if [[ ! -d "$SUPERCHIC_DIR" ]]; then
   echo "ERROR: SuperChic directory not found: $SUPERCHIC_DIR" >&2
+  echo "Clone it with:" >&2
+  echo "  cd $CMSSW_PROJECT_DIR && git clone https://github.com/LucianHL/SuperChic.git" >&2
   exit 1
 fi
 
@@ -33,6 +35,7 @@ if [[ -f "$SUPERCHIC_DIR/env_setup.sh" ]]; then
   source "$SUPERCHIC_DIR/env_setup.sh"
 else
   echo "ERROR: SuperChic env_setup.sh not found: $SUPERCHIC_DIR/env_setup.sh" >&2
+  echo "Build/install SuperChic first, then run: source $SUPERCHIC_DIR/env_setup.sh" >&2
   exit 1
 fi
 

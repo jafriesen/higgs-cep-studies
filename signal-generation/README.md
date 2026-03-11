@@ -1,44 +1,42 @@
 # signal-generation
 
-This directory contains SuperChic-side MC generation tools.
+Signal-generation instructions using an **external** SuperChic checkout.
 
-## What is here
+## Contents
 
-- `templates/`
-  - `h_bb_template.DAT` — H→bb signal card template for SuperChic.
-  - `qcd_bb_template.DAT` — QCD bb background template.
-- `scripts/run_superchic_signal.sh` — wrapper to generate a single SuperChic job.
-- `output/` and `logs/` for local outputs.
+- `scripts/run_superchic_signal.sh` - runs one SuperChic job (`h_bb` or `qcd_bb`) using cards from `${SUPERCHIC_DIR}`.
+- `output/` - produced files, grouped by process/tag.
+- `logs/` - per-job logs.
+
+No SuperChic source/cards are stored in this repo.
 
 ## Setup
 
-From repo root, source the common environment first:
-
 ```bash
-source ../setup_env.sh
+cd /home/mstamenk/superchic/CMSSW_15_0_0/src/higgs-cep-studies
+source setup_env.sh
 ```
 
-## Run a single H→bb job
+## Run `h_bb` signal
 
 ```bash
 cd signal-generation/scripts
-./run_superchic_signal.sh --nev 10000 --seed 1001 --out-tag hbb_001 1 \
-  --template ../templates/h_bb_template.DAT
+./run_superchic_signal.sh --process h_bb --nev 10000 --seed 1001 --out-tag hbb_001 1
 ```
 
-Arguments:
+Default card for `h_bb`:
+- `${SUPERCHIC_DIR}/bin/h_bb/h_bb.DAT`
 
-- `--template` card template in this directory (default: `h_bb_template.DAT`)
-- `--nev` number of generated events
-- `--seed` RNG seed
-- `--out-tag` output tag used in `evrec_*.root`
-- `<job_index>` required positional argument
+The wrapper patches these entries in a temporary card copy:
+- `[outtg]`
+- `[iseed]`
+- `[nev]`
 
-## Run a QCD bb card
+Output location:
+- `signal-generation/output/h_bb/<out-tag>/`
+
+## Optional: custom card
 
 ```bash
-./run_superchic_signal.sh --nev 10000 --seed 2025 --out-tag qcd_001 1 \
-  --template ../templates/qcd_bb_template.DAT
+./run_superchic_signal.sh --process h_bb --card /path/to/my_card.DAT --out-tag test 1
 ```
-
-The script copies the template to a temporary work directory, substitutes `@SEED@`, `@NEVT@`, and `@OUT@`, then runs SuperChic and stores produced files under `signal-generation/output/<out-tag>/`.

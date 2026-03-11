@@ -1,24 +1,42 @@
 # bkg-generation
 
-This directory contains the Pythia8 workflow for combinatorial background studies.
+Background generation is split into two pieces:
+
+- SuperChic `qcd_bb` generation.
+- Pythia8 min-bias proton study for combinatorial rates.
 
 ## Scripts
 
-- `run_pythia8_minbias_study.sh` — main runner for generating min-bias protons and writing pair ROOT.
-- `generate_minbias_protons.py` — copied from the project source; generates final-state protons into `.npz`.
-- `build_minbias_pairs.py` — copied converter from `.npz` to `ProtonPairs` ROOT tree.
-- `analyze_minbias_protons.py` — proton-level quality plots from `.npz`.
-- `quick_check_minbias.py` — quick distribution sanity checks.
+- `scripts/run_superchic_qcd.sh` - wrapper for one SuperChic `qcd_bb` job.
+- `scripts/run_pythia8_minbias_study.sh` - end-to-end min-bias generation (`.npz`) and pair-building (`.root`).
+- `scripts/generate_minbias_protons.py` - reused Pythia8 generator script.
+- `scripts/build_minbias_pairs.py` - `.npz -> ProtonPairs` converter.
+- `scripts/analyze_minbias_protons.py` - station-level acceptance/rate summaries.
+- `scripts/quick_check_minbias.py` - quick quantile sanity plots.
 
-## Run
+## Setup
+
+```bash
+cd /home/mstamenk/superchic/CMSSW_15_0_0/src/higgs-cep-studies
+source setup_env.sh
+```
+
+## Run SuperChic QCD background
 
 ```bash
 cd bkg-generation/scripts
-source ../../setup_env.sh
+./run_superchic_qcd.sh --nev 10000 --seed 2001 --out-tag qcd_001 1
+```
+
+Output:
+- `bkg-generation/output/qcd_bb/<out-tag>/`
+
+## Run Pythia8 min-bias combinatorial study
+
+```bash
 ./run_pythia8_minbias_study.sh --n-bx 1000 --mu 200 --label minbias
 ```
 
-Default outputs:
-
+Outputs:
 - `bkg-generation/output/minbias/minbias.npz`
 - `bkg-generation/output/minbias/minbias_pairs.root`

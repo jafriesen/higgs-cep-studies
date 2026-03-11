@@ -256,10 +256,9 @@ def main():
 
     study_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     default_sig_root = os.path.join(
-        os.environ.get("HIGGS_SIGNAL_DIR", os.path.join(study_dir, "signal-generation")),
+        os.environ.get("HIGGS_ANALYSIS_DIR", os.path.join(study_dir, "analysis")),
         "output",
-        "hbb_001",
-        "evrec_hbb_001.root",
+        "hbb_001_pairs.root",
     )
     default_bkg_root = os.path.join(
         os.environ.get("HIGGS_BKG_DIR", os.path.join(study_dir, "bkg-generation")),

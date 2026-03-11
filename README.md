@@ -1,58 +1,91 @@
-# Higgs CEP Studies (CMSSW-friendly student layout)
+# Higgs CEP Studies (Student Setup)
 
-This folder is prepared to run quickly in the CMSSW release already present in this tree:
-`CMSSW_15_0_0` (detected from the checkout path).
+This repository is intentionally lightweight: it does **not** vendor `SuperChic`.
 
-It is split into three working areas:
+It is organized in three clean work areas:
 
-- `signal-generation` — run SuperChic signal (and QCD background) jobs.
-- `bkg-generation` — run Pythia8 min-bias proton production for combinatorial background studies.
-- `analysis` — scripts to compare signal vs background and estimate trigger-rate working points.
+- `signal-generation` - SuperChic signal production (`h_bb`).
+- `bkg-generation` - background production (`qcd_bb` via SuperChic + Pythia8 min-bias study).
+- `analysis` - reusable analysis and rate-estimate scripts.
 
-## 1) Global setup
+The CMSSW release used here is:
+- `CMSSW_15_0_0`
 
-From the machine where CMSSW and SuperChic are available:
+## 1) One-time environment setup
 
 ```bash
-cd CMSSW_15_0_0/src
+cd /home/mstamenk/superchic
 source /cvmfs/cms.cern.ch/cmsset_default.sh
+cmsrel CMSSW_15_0_0
+cd CMSSW_15_0_0/src
 cmsenv
+```
 
+If `CMSSW_15_0_0` already exists on your machine, reuse it.
+
+## 2) Download and build SuperChic (online)
+
+```bash
+cd /home/mstamenk/superchic/CMSSW_15_0_0/src
+git clone https://github.com/LucianHL/SuperChic.git
 cd SuperChic
-source env_setup.sh
 
-cd ../higgs-cep-studies
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX="$PWD/install"
+cmake --build build -j 8
+cmake --install build
+
+source env_setup.sh
+```
+
+## 3) Setup this repo
+
+```bash
+cd /home/mstamenk/superchic/CMSSW_15_0_0/src/higgs-cep-studies
 source setup_env.sh
 ```
 
-`setup_env.sh` also exports:
+`setup_env.sh` exports:
 - `HIGGS_SIGNAL_DIR`
 - `HIGGS_BKG_DIR`
 - `HIGGS_ANALYSIS_DIR`
+- `SUPERCHIC_DIR`
 
-## 2) Run flow (suggested)
+## 4) Typical workflow
 
-1. Generate signal using `signal-generation/scripts/run_superchic_signal.sh`
-2. Generate Pythia8 min-bias samples using `bkg-generation/scripts/run_pythia8_minbias_study.sh`
-3. Run analysis scripts under `analysis/scripts/`.
+1. Generate signal in `signal-generation`.
+2. Generate background in `bkg-generation`.
+3. Run scans/plots in `analysis`.
 
-## 3) Example one-line workflow
+## 5) Minimal command examples
 
 ```bash
-# 1) signal
+# A) Signal (SuperChic h_bb)
 cd signal-generation/scripts
-./run_superchic_signal.sh --nev 10000 --seed 1001 --out-tag hbb_001 1
+./run_superchic_signal.sh --process h_bb --nev 10000 --seed 1001 --out-tag hbb_001 1
 
-# 2) background
+# B) Background (SuperChic qcd_bb)
 cd ../../bkg-generation/scripts
+./run_superchic_qcd.sh --nev 10000 --seed 2001 --out-tag qcd_001 1
+
+# C) Pythia8 min-bias study (combinatorial)
 ./run_pythia8_minbias_study.sh --n-bx 1000 --mu 200 --label minbias
 
-# 3) rate scan
+# D) Rate estimate (reused analysis script)
 cd ../../analysis
+python3 scripts/build_signal_pairs.py \
+  --input ../signal-generation/output/h_bb/hbb_001/outputs \
+  --root-out output/hbb_001_pairs.root
+
 python3 scripts/optimize_trigger_rate.py \
-  --sig-root ../signal-generation/output/hbb_001/evrec_hbb_001*.root \
+  --sig-root output/hbb_001_pairs.root \
   --bkg-root ../bkg-generation/output/minbias/minbias_pairs.root \
-  --top-n 10
+  --csv-out examples/rate_scan.csv
+
+# E) Optional shape comparison (h_bb vs qcd_bb)
+python3 scripts/compare_sig_bkg_pps.py \
+  --sig-root ../signal-generation/output/h_bb/hbb_001/evrecs/evrec_hbb_001.root \
+  --bkg-root ../bkg-generation/output/qcd_bb/qcd_001/evrecs/evrec_qcd_001.root \
+  --out-prefix examples/comp_hbb_vs_qcd
 ```
 
-Paths in these examples match the defaults of the helper scripts in this repository.
+See local READMEs in each subdirectory for details.
