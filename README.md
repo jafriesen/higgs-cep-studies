@@ -1,4 +1,4 @@
-# Higgs CEP Studies (Student Setup)
+# Higgs CEP Studies 
 
 This repository is intentionally lightweight: it does **not** vendor `SuperChic`.
 
