@@ -14,7 +14,6 @@ The CMSSW release used here is:
 ## 1) One-time environment setup
 
 ```bash
-cd /home/mstamenk/superchic
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 cmsrel CMSSW_15_0_0
 cd CMSSW_15_0_0/src
