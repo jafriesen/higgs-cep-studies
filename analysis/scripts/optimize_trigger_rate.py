@@ -351,10 +351,19 @@ def main():
         zcut = nsig * sigma_dz
         sig_mask = base_sig & (np.abs(sig_dz_obs) <= zcut)
         bkg_mask = base_bkg & (np.abs(bkg_dz_obs) <= zcut)
+        # print(f"bkg mask after dz cut (|dz|<={zcut:.4f} cm): {bkg_mask.sum()} pairs pass")
+        # print passing bkg pairs
+        # for i in np.where(bkg_mask)[0]:
+        #     print(
+        #         f"  BX {bkg['bx'][i]}: dz_obs={bkg_dz_obs[i]:.4f} cm, "
+        #         f"M={bkg['M'][i]:.2f} GeV, y_pp={bkg['y_pp'][i]:.3f}, "
+        #         f"pt_bal={bkg['pt_bal'][i]:.3f} GeV"
+        #     )
 
         if m_hw is not None:
             sig_mask = sig_mask & (np.abs(sig["M"] - M_H_GEV) <= m_hw)
             bkg_mask = bkg_mask & (np.abs(bkg["M"] - M_H_GEV) <= m_hw)
+            # print(f"bkg mask after mass cut (|M-125|<={m_hw:.1f} GeV): {bkg_mask.sum()} pairs pass")
 
         if y_max is not None:
             sig_mask = sig_mask & (np.abs(sig["y_pp"]) <= y_max)
@@ -441,15 +450,15 @@ def main():
     print(f"\n=== Top {min(args.top_n, len(rows_sorted))} WPs by lowest rate ===")
     print(
         "rank  nsig   zcut[cm]  Mhw[GeV]  ymax   ptmax[GeV]  "
-        "sigEff(rel)  bkgFrac     rate40[kHz]"
+        "sigEff(rel)  bkgFrac   bkgPass     rate40[kHz]   rate31.6[kHz]"
     )
     for i, r in enumerate(rows_sorted[: args.top_n], start=1):
         print(
             f"{i:>4d}  {r['nsig']:>4.2f}   {r['zcut']:>8.4f}  "
             f"{format_cut(r['m_hw']):>8}  {format_cut(r['y_max']):>5}  "
             f"{format_cut(r['pt_max']):>10}  "
-            f"{r['sig_eff_rel']:>10.4f}  {r['bkg_frac']:>8.6f}  "
-            f"{r['rate40_khz']:>11.1f}"
+            f"{r['sig_eff_rel']:>10.4f}  {r['bkg_frac']:>8.6f}  {r['bkg_pass']:>10d}  "
+            f"{r['rate40_khz']:>11.1f}"     f"{r['rate31_khz']:>11.1f}"
         )
 
     if args.csv_out:

@@ -1,0 +1,34 @@
+# Ignore some common files
+__pycache__/
+AGENTS.md
+
+# Ignore generator files
+*.lhe
+*.lhe.gz
+*.hepmc
+*.hepmc.gz
+signal-generation/logs/*
+signal-generation/output/*
+bkg-generation/output/*
+bkg-generation/logs/*
+
+# Ignore output files
+*.root
+*.log
+*.txt
+*.pdf
+*.png
+*.jpg
+*.csv
+*.dat
+*.json
+*.xml
+*.yaml
+*.zip
+*.tar.gz
+*.tar
+*.tgz
+*.out
+*.err
+*.npz
+*.sub

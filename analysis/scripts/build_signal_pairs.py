@@ -23,10 +23,10 @@ M_WIN_HIGH   = 135.0
 
 # PPS / pot xi windows (same as before)
 STATION_XI = {
-    "192": (0.0140, 0.0250),   # ~196 m
-    "213": (0.0390, 0.0680),   # ~220 m
-    "220": (0.0390, 0.0680),   # ~234 m
-    "420": (0.00325, 0.0120),  # 420 m, low-xi region
+    "192": (0.08, 0.1967),   # ~196 m
+    "213": (0.0375, 0.0688),   # ~220 m
+    "220": (0.014, 0.0263),   # ~234 m
+    "420": (0.00325, 0.0116),  # 420 m, low-xi region
 }
 STATION_NAMES = list(STATION_XI.keys())
 
@@ -56,8 +56,10 @@ def parse_lhe_with_xsec(filename):
     init_line_count = 0
 
     with open(filename) as f:
+        print(f"Parsing LHE file: {filename}")
         for raw in f:
             line = raw.strip()
+            print(f"  Read line: {line[:80]}{'...' if len(line) > 80 else ''}")
             if not line:
                 continue
 
@@ -444,21 +446,29 @@ def main():
         xsec_from_file = None
 
         for f in lhe_files:
+            print(f"  Processing file: {f}")
             evs, xs = parse_lhe_with_xsec(f)
+            print(f"    Events in file: {len(evs)}; cross section from file: {xs:.6e} pb" if xs is not None else f"    Events in file: {len(evs)}; no cross section found")
 
             if xsec_from_file is None and xs is not None:
+                print(f"    Setting cross section from this file: {xs:.6e} pb")
                 xsec_from_file = xs
 
             if args.max_events is not None:
                 remaining = args.max_events - len(events)
+                print(f"    Remaining events allowed by --max-events: {remaining}")
                 if remaining <= 0:
+                    print(f"Reached max events limit ({args.max_events}), stopping file processing.")
                     break
                 if len(evs) > remaining:
+                    print(f"    Truncating events from this file to {remaining} due to --max-events")
                     evs = evs[:remaining]
 
+            print(f"    Adding {len(evs)} events from this file to total.")
             events.extend(evs)
 
             if args.max_events is not None and len(events) >= args.max_events:
+                print(f"Reached max events limit ({args.max_events}) after processing this file, stopping further file processing.")
                 break
 
         print(f"  Total events loaded: {len(events)}")

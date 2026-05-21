@@ -37,6 +37,12 @@ Output:
 ./run_pythia8_minbias_study.sh --n-bx 1000 --mu 200 --label minbias
 ```
 
+For BX-by-BX pileup fluctuations with mean 200 interactions:
+
+```bash
+./run_pythia8_minbias_study.sh --n-bx 1000 --mu 200 --mu-mode poisson --label minbias_poisson
+```
+
 Outputs:
 - `bkg-generation/output/minbias/minbias.npz`
 - `bkg-generation/output/minbias/minbias_pairs.root`

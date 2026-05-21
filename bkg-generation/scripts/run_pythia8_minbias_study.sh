@@ -3,26 +3,33 @@
 usage() {
   cat <<'USAGE'
 Usage:
-  run_pythia8_minbias_study.sh [--n-bx N_BX] [--mu MU] [--e-cm ECM_GEV] \
-    [--processes "SoftQCD:all"] [--label NAME] [--no-root]
+  run_pythia8_minbias_study.sh [--n-bx N_BX] [--mu MU] [--mu-mode fixed|poisson] \
+    [--e-cm ECM_GEV] [--processes "SoftQCD:all"] [--label NAME] \
+    [--seed SEED] [--bx-offset BX_OFFSET] [--store-tracks] [--no-root]
 
 Example:
-  ./run_pythia8_minbias_study.sh --n-bx 1000 --mu 200 --label minbias
+  ./run_pythia8_minbias_study.sh --n-bx 1000 --mu 200 --mu-mode poisson --label minbias
 USAGE
   exit 1
 }
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-STUDY_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+RUN_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+STUDY_DIR="$(cd "$RUN_SCRIPT_DIR/../.." && pwd)"
 
 source "$STUDY_DIR/setup_env.sh"
 
+unset PYTHIA8DATA
+
 N_BX=1000
 MU=200
+MU_MODE="fixed"
 E_CM=14000.0
 PROCESSES="SoftQCD:all"
 LABEL="minbias"
+SEED=""
+BX_OFFSET=0
 BUILD_ROOT=true
+STORE_TRACKS=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -32,6 +39,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --mu)
       MU="$2"
+      shift 2
+      ;;
+    --mu-mode)
+      MU_MODE="$2"
       shift 2
       ;;
     --e-cm)
@@ -46,8 +57,20 @@ while [[ $# -gt 0 ]]; do
       LABEL="$2"
       shift 2
       ;;
+    --seed)
+      SEED="$2"
+      shift 2
+      ;;
+    --bx-offset)
+      BX_OFFSET="$2"
+      shift 2
+      ;;
     --no-root)
       BUILD_ROOT=false
+      shift
+      ;;
+    --store-tracks)
+      STORE_TRACKS=true
       shift
       ;;
     -h|--help)
@@ -68,15 +91,27 @@ mkdir -p "$OUT_DIR"
 NPZ_FILE="$OUT_DIR/$LABEL.npz"
 ROOT_FILE="$OUT_DIR/${LABEL}_pairs.root"
 
-python3 "$SCRIPT_DIR/generate_minbias_protons.py" \
-  --n-bx "$N_BX" \
-  --mu "$MU" \
-  --e-cm "$E_CM" \
-  --processes "$PROCESSES" \
+GEN_ARGS=(
+  --n-bx "$N_BX"
+  --mu "$MU"
+  --mu-mode "$MU_MODE"
+  --e-cm "$E_CM"
+  --processes "$PROCESSES"
+  --bx-offset "$BX_OFFSET"
   --output "$NPZ_FILE"
+)
+
+if [[ -n "$SEED" ]]; then
+  GEN_ARGS+=(--seed "$SEED")
+fi
+if [[ "$STORE_TRACKS" == true ]]; then
+  GEN_ARGS+=(--store-tracks)
+fi
+
+python3 "$RUN_SCRIPT_DIR/generate_minbias_protons.py" "${GEN_ARGS[@]}"
 
 if [[ "$BUILD_ROOT" == true ]]; then
-  python3 "$SCRIPT_DIR/build_minbias_pairs.py" \
+  python3 "$RUN_SCRIPT_DIR/build_minbias_pairs.py" \
     --input "$NPZ_FILE" \
     --all-bx \
     --root-out "$ROOT_FILE"
