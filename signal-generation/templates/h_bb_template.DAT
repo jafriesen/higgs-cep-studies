@@ -1,9 +1,9 @@
 ****************************************************************************************
 ******  RE-RUN ./init IF FIRST FIVE PARAMETERS ARE CHANGED (and beam = 'prot'):  *******
 ****************************************************************************************
-1.36d4           !  [rts] : CMS collision energy (GeV)
+1.40d4           !  [rts] : CMS collision energy (GeV)
 4	       !  [isurv] : Model of soft survival (from 1 -> 4, corresponding to arXiv:1306.2149)
-'in136_hbb'         !  [intag] for input files 
+'in140_hbb'         !  [intag] for input files 
 ****************************************************************************************
 ****************************************************************************************
 'NNPDF31_nnlo_as_0118'   ! [PDFname] : PDF set

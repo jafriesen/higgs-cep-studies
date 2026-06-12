@@ -290,6 +290,8 @@ def build_events_tree_from_lhe(input_path, output_root, max_events=None, xsec_ov
             b = None
             bbar = None
             for p in parts:
+                beam_E1 = None
+                beam_E2 = None
                 pid, status, px, py, pz, E = p
 
                 if pid == 2212:
@@ -298,14 +300,14 @@ def build_events_tree_from_lhe(input_path, output_root, max_events=None, xsec_ov
                     elif status == 1:
                         protons_out.append(p)
                 elif status == 1:
-                    if pid == 5:
+                    if pid == 4:
                         if b is not None:
                             b = False
                             counters["skip_bad_b_content"] += 1
                             continue
                         else:
                             b = p
-                    elif pid == -5:
+                    elif pid == -4:
                         if bbar is not None:
                             bbar = False
                             counters["skip_bad_b_content"] += 1
@@ -402,23 +404,33 @@ def main():
     default_sig_in = os.path.join(
         os.environ.get("HIGGS_SIGNAL_DIR", os.path.join(study_dir, "signal-generation")),
         "output",
-        "h_bb"
+        "h_cc"
     )
     default_bkg_in = os.path.join(
-        os.environ.get("HIGGS_BKG_DIR", os.path.join(study_dir, "signal-generation")),
+        os.environ.get("HIGGS_SIGNAL_DIR", os.path.join(study_dir, "signal-generation")),
         "output",
-        "qcd_bb"
+        "qcd_cc"
+    )
+    default_gamgam_bkg_in = os.path.join(
+        os.environ.get("HIGGS_SIGNAL_DIR", os.path.join(study_dir, "signal-generation")),
+        "output",
+        "gamgam_cc"
     )
 
     default_sig_out = os.path.join(
         os.environ.get("HIGGS_SIGNAL_DIR", os.path.join(study_dir, "signal-generation")),
         "output",
-        "hbb_tree.root",
+        "hcc_tree.root",
     )
     default_bkg_out = os.path.join(
-        os.environ.get("HIGGS_BKG_DIR", os.path.join(study_dir, "signal-generation")),
+        os.environ.get("HIGGS_SIGNAL_DIR", os.path.join(study_dir, "signal-generation")),
         "output",
-        "qcdbb_tree.root",
+        "qcdcc_tree.root",
+    )
+    default_gamgam_bkg_out = os.path.join(
+        os.environ.get("HIGGS_SIGNAL_DIR", os.path.join(study_dir, "signal-generation")),
+        "output",
+        "gamgam_cc_tree.root",
     )
 
     parser = argparse.ArgumentParser(
@@ -430,19 +442,29 @@ def main():
     parser.add_argument("--sig-input", default=default_sig_in,
                         help=f"Signal input LHE/dat file or directory (default: {default_sig_in})")
     parser.add_argument("--bkg-input", default=default_bkg_in,
-                        help=f"Background input LHE/dat file or directory (default: {default_bkg_in})")
+                        help=f"QCD background input LHE/dat file or directory (default: {default_bkg_in})")
+    parser.add_argument("--gamgam-bkg-input", default=default_gamgam_bkg_in,
+                        help=f"gamma gamma -> ccbar background input LHE/dat file or directory (default: {default_gamgam_bkg_in})")
     parser.add_argument("--sig-root-out", default=default_sig_out,
                         help=f"Signal output ROOT path (default: {default_sig_out})")
     parser.add_argument("--bkg-root-out", default=default_bkg_out,
-                        help=f"Background output ROOT path (default: {default_bkg_out})")
+                        help=f"QCD background output ROOT path (default: {default_bkg_out})")
+    parser.add_argument("--gamgam-bkg-root-out", default=default_gamgam_bkg_out,
+                        help=f"gamma gamma -> ccbar background output ROOT path (default: {default_gamgam_bkg_out})")
     parser.add_argument("--sig-max-events", type=int, default=None,
                         help="Optional max events to write for signal")
     parser.add_argument("--bkg-max-events", type=int, default=None,
-                        help="Optional max events to write for background")
+                        help="Optional max events to write for QCD background")
+    parser.add_argument("--gamgam-bkg-max-events", type=int, default=None,
+                        help="Optional max events to write for gamma gamma -> ccbar background")
     parser.add_argument("--sig-xsec-pb", type=float, default=None,
                         help="Optional signal cross section override (pb), for logging")
     parser.add_argument("--bkg-xsec-pb", type=float, default=None,
-                        help="Optional background cross section override (pb), for logging")
+                        help="Optional QCD background cross section override (pb), for logging")
+    parser.add_argument("--gamgam-bkg-xsec-pb", type=float, default=None,
+                        help="Optional gamma gamma -> ccbar background cross section override (pb), for logging")
+    parser.add_argument("--skip-gamgam-bkg", action="store_true",
+                        help="Do not build the gamma gamma -> ccbar background ROOT file")
     args = parser.parse_args()
 
     build_events_tree_from_lhe(
@@ -458,8 +480,17 @@ def main():
         output_root=args.bkg_root_out,
         max_events=args.bkg_max_events,
         xsec_override=args.bkg_xsec_pb,
-        label="background",
+        label="qcd_background",
     )
+
+    if not args.skip_gamgam_bkg:
+        build_events_tree_from_lhe(
+            input_path=args.gamgam_bkg_input,
+            output_root=args.gamgam_bkg_root_out,
+            max_events=args.gamgam_bkg_max_events,
+            xsec_override=args.gamgam_bkg_xsec_pb,
+            label="gamgam_background",
+        )
 
 
 if __name__ == "__main__":

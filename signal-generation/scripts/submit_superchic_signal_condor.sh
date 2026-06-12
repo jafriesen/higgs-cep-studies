@@ -5,13 +5,17 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  submit_superchic_signal_condor.sh --jobs N [--process h_bb|qcd_bb] [--nev EVENTS] \
+  submit_superchic_signal_condor.sh --jobs N [--process h_bb|qcd_bb|h_cc|qcd_cc|gamgam_cc|gamgam_bb] [--nev EVENTS] \
     [--card DAT_FILE] [--seed-base BASE] [--tag-prefix PREFIX] [--campaign NAME] \
     [--output-base DIR] [--request-memory MB] [--dry-run]
 
 Examples:
   ./submit_superchic_signal_condor.sh --process h_bb --nev 10000 --jobs 20
   ./submit_superchic_signal_condor.sh --process qcd_bb --nev 20000 --jobs 50 --seed-base 5000
+  ./submit_superchic_signal_condor.sh --process h_cc --nev 10000 --jobs 20
+  ./submit_superchic_signal_condor.sh --process qcd_cc --nev 10000 --jobs 20
+  ./submit_superchic_signal_condor.sh --process gamgam_cc --nev 10000 --jobs 20
+  ./submit_superchic_signal_condor.sh --process gamgam_bb --nev 10000 --jobs 20
 USAGE
   exit 1
 }
@@ -91,10 +95,10 @@ if [[ -z "$TOTAL_JOBS" ]]; then
 fi
 
 case "$PROCESS" in
-  h_bb|qcd_bb)
+  h_bb|qcd_bb|h_cc|qcd_cc|gamgam_cc|gamgam_bb)
     ;;
   *)
-    echo "ERROR: --process must be h_bb or qcd_bb (got: $PROCESS)" >&2
+    echo "ERROR: --process must be h_bb, qcd_bb, h_cc, qcd_cc, gamgam_cc, or gamgam_bb (got: $PROCESS)" >&2
     exit 1
     ;;
 esac

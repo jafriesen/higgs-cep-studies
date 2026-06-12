@@ -3,13 +3,17 @@
 usage() {
   cat <<'USAGE'
 Usage:
-  run_superchic_signal.sh [--process h_bb|qcd_bb] [--card <dat_file>] \
+  run_superchic_signal.sh [--process h_bb|qcd_bb|h_cc|qcd_cc|gamgam_cc|gamgam_bb] [--card <dat_file>] \
     [--nev <events>] [--seed <seed>] [--out-tag <tag>] \
     [--output-base <dir>] <job_index>
 
 Examples:
   ./run_superchic_signal.sh --process h_bb --nev 10000 --seed 1001 --out-tag hbb_001 1
+  ./run_superchic_signal.sh --process h_cc --nev 10000 --seed 1001 --out-tag hcc_001 1
   ./run_superchic_signal.sh --process qcd_bb --nev 10000 --out-tag qcd_001 1
+  ./run_superchic_signal.sh --process qcd_cc --nev 10000 --out-tag qcd_001 1
+  ./run_superchic_signal.sh --process gamgam_cc --nev 10000 --out-tag gamgam_cc_001 1
+  ./run_superchic_signal.sh --process gamgam_bb --nev 10000 --out-tag gamgam_bb_001 1
 USAGE
   exit 1
 }
@@ -72,10 +76,10 @@ fi
 JOB_INDEX="$1"
 
 case "$PROCESS" in
-  h_bb|qcd_bb)
+  h_bb|qcd_bb|h_cc|qcd_cc|gamgam_cc|gamgam_bb)
     ;;
   *)
-    echo "ERROR: --process must be h_bb or qcd_bb (got: $PROCESS)" >&2
+    echo "ERROR: --process must be h_bb, qcd_bb, h_cc, qcd_cc, gamgam_cc, or gamgam_bb (got: $PROCESS)" >&2
     exit 1
     ;;
 esac
@@ -100,12 +104,39 @@ if [[ -z "$CARD" ]]; then
       "$SUPERCHIC_DIR/bin/h_bb/h_bb.DAT"
       "$SUPERCHIC_DIR/Cards/h_bb.DAT"
     )
-  else
+  elif [[ "$PROCESS" == "qcd_bb" ]]; then
     CARD_CANDIDATES=(
       "$STUDY_DIR/signal-generation/templates/qcd_bb_template.DAT"
       "$SUPERCHIC_DIR/bin/qcd_bb/qcd_bb_template.DAT"
       "$SUPERCHIC_DIR/bin/qcd_bb/qcd_bb.DAT"
       "$SUPERCHIC_DIR/Cards/qcd_bb.DAT"
+    )
+  elif [[ "$PROCESS" == "h_cc" ]]; then
+    CARD_CANDIDATES=(
+      "$STUDY_DIR/signal-generation/templates/h_cc_template.DAT"
+      "$SUPERCHIC_DIR/bin/h_cc/h_cc.DAT"
+      "$SUPERCHIC_DIR/Cards/h_cc.DAT"
+    )
+  elif [[ "$PROCESS" == "qcd_cc" ]]; then
+    CARD_CANDIDATES=(
+      "$STUDY_DIR/signal-generation/templates/qcd_cc_template.DAT"
+      "$SUPERCHIC_DIR/bin/qcd_cc/qcd_cc_template.DAT"
+      "$SUPERCHIC_DIR/bin/qcd_cc/qcd_cc.DAT"
+      "$SUPERCHIC_DIR/Cards/qcd_cc.DAT"
+    )
+  elif [[ "$PROCESS" == "gamgam_cc" ]]; then
+    CARD_CANDIDATES=(
+      "$STUDY_DIR/signal-generation/templates/gamgam_cc_template.DAT"
+      "$SUPERCHIC_DIR/bin/gamgam_cc/gamgam_cc_template.DAT"
+      "$SUPERCHIC_DIR/bin/gamgam_cc/gamgam_cc.DAT"
+      "$SUPERCHIC_DIR/Cards/gamgam_cc.DAT"
+    )
+  elif [[ "$PROCESS" == "gamgam_bb" ]]; then
+    CARD_CANDIDATES=(
+      "$STUDY_DIR/signal-generation/templates/gamgam_bb_template.DAT"
+      "$SUPERCHIC_DIR/bin/gamgam_bb/gamgam_bb_template.DAT"
+      "$SUPERCHIC_DIR/bin/gamgam_bb/gamgam_bb.DAT"
+      "$SUPERCHIC_DIR/Cards/gamgam_bb.DAT"
     )
   fi
 
@@ -125,9 +156,21 @@ if [[ ! -f "$CARD" ]]; then
   if [[ "$PROCESS" == "h_bb" ]]; then
     echo "ERROR: card not found for process h_bb." >&2
     echo "Tried: signal-generation/templates/h_bb_template.DAT, \$SUPERCHIC_DIR/bin/h_bb/h_bb.DAT, \$SUPERCHIC_DIR/Cards/h_bb.DAT" >&2
-  else
+  elif [[ "$PROCESS" == "qcd_bb" ]]; then
     echo "ERROR: card not found for process qcd_bb." >&2
     echo "Tried: signal-generation/templates/qcd_bb_template.DAT, \$SUPERCHIC_DIR/bin/qcd_bb/qcd_bb_template.DAT, \$SUPERCHIC_DIR/bin/qcd_bb/qcd_bb.DAT, \$SUPERCHIC_DIR/Cards/qcd_bb.DAT" >&2
+  elif [[ "$PROCESS" == "h_cc" ]]; then
+    echo "ERROR: card not found for process h_cc." >&2
+    echo "Tried: signal-generation/templates/h_cc_template.DAT, \$SUPERCHIC_DIR/bin/h_cc/h_cc.DAT, \$SUPERCHIC_DIR/Cards/h_cc.DAT" >&2
+  elif [[ "$PROCESS" == "qcd_cc" ]]; then
+    echo "ERROR: card not found for process qcd_cc." >&2
+    echo "Tried: signal-generation/templates/qcd_cc_template.DAT, \$SUPERCHIC_DIR/bin/qcd_cc/qcd_cc_template.DAT, \$SUPERCHIC_DIR/bin/qcd_cc/qcd_cc.DAT, \$SUPERCHIC_DIR/Cards/qcd_cc.DAT" >&2
+  elif [[ "$PROCESS" == "gamgam_cc" ]]; then
+    echo "ERROR: card not found for process gamgam_cc." >&2
+    echo "Tried: signal-generation/templates/gamgam_cc_template.DAT, \$SUPERCHIC_DIR/bin/gamgam_cc/gamgam_cc_template.DAT, \$SUPERCHIC_DIR/bin/gamgam_cc/gamgam_cc.DAT, \$SUPERCHIC_DIR/Cards/gamgam_cc.DAT" >&2
+  elif [[ "$PROCESS" == "gamgam_bb" ]]; then
+    echo "ERROR: card not found for process gamgam_bb." >&2
+    echo "Tried: signal-generation/templates/gamgam_bb_template.DAT, \$SUPERCHIC_DIR/bin/gamgam_bb/gamgam_bb_template.DAT, \$SUPERCHIC_DIR/bin/gamgam_bb/gamgam_bb.DAT, \$SUPERCHIC_DIR/Cards/gamgam_bb.DAT" >&2
   fi
   exit 1
 fi
