@@ -3,13 +3,13 @@
 ****************************************************************************************
 1.40d4           !  [rts] : CMS collision energy (GeV)
 4	       !  [isurv] : Model of soft survival (from 1 -> 4, corresponding to arXiv:1306.2149)
-'in140_hcc'         !  [intag] for input files 
+'in140_qed_cc'         !  [intag] for input files 
 ****************************************************************************************
 ****************************************************************************************
 'NNPDF31_nnlo_as_0118'   ! [PDFname] : PDF set
 0                    ! [PDFmember] : PDF member
 ****************************************************************************************
-5      !  [proc] : Process number (see manual for labelling)
+62      ! [proc] : Process number (gamma gamma -> c cbar)
 'prot'  ! [beam] : Beam type ('prot', 'ion', 'ionp' or 'el')
 '@OUT@'          ! [outtg]
 .true.  !  [sfaci] : Include soft survival effects

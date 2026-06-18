@@ -7,8 +7,8 @@ AGENTS.md
 *.lhe.gz
 *.hepmc
 *.hepmc.gz
-signal-generation/logs/*
-signal-generation/output/*
+generation-superchic/logs/*
+generation-superchic/output/*
 bkg-generation/output/*
 bkg-generation/logs/*
 

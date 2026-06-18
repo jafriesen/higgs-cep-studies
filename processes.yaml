@@ -1,0 +1,49 @@
+h_bb:
+  process_code: 1
+  xsec_pb: null
+  weight: 1.0
+  jet_pdg_ids: [5, -5]
+  path: signal-generation/output/gamgam_bb/gamgam_bb_test/evrecs
+  campaigns: []
+h_cc:
+  process_code: 85
+  path: /path/to/H_cc
+  xsec_pb: null
+  weight: 1.0
+  jet_pdg_ids: [4, -4]
+qcd_bb:
+  process_code: 6
+  path: /path/to/QCD_bb
+  xsec_pb: null
+  weight: 1.0
+  jet_pdg_ids: [5, -5]
+qcd_cc:
+  process_code: 5
+  path: /path/to/QCD_cc
+  xsec_pb: null
+  weight: 1.0
+  jet_pdg_ids: [4, -4]
+qed_bb:
+  process_code: 63
+  path: signal-generation/output/gamgam_bb/gamgam_bb_test/evrecs
+  xsec_pb: null
+  weight: 1.0
+  jet_pdg_ids: [5, -5]
+qed_cc:
+  process_code: 62
+  path: /path/to/QED_cc
+  xsec_pb: null
+  weight: 1.0
+  jet_pdg_ids: [4, -4]
+qcd_qq:
+  process_code: 4
+  path: /path/to/QCD_qq
+  xsec_pb: null
+  weight: 1.0
+  jet_pdg_ids: [1, -1, 2, -2, 3, -3]
+qcd_gg:
+  process_code: 3
+  path: /path/to/QCD_gg
+  xsec_pb: null
+  weight: 1.0
+  jet_pdg_ids: [21, 21]
