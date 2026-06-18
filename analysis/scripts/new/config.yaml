@@ -1,0 +1,34 @@
+beam:
+  sqrt_s_gev: 14000.0             # COM energy (GeV)
+  proton_mass_gev: 0.9382720813   # proton mass (GeV)
+inputs:
+  minbias_path: bkg-generation/output/minbias_mu150
+output:
+  dir: analysis/output
+  name: bx_overlay.root
+pps:
+  xi_ranges:                      # PPS xi acceptance
+    "192": [0.08, 0.1967]
+    "213": [0.0375, 0.0688]
+    "220": [0.014, 0.0263]
+    "420": [0.00325, 0.0116]
+  xi_res: 0.0003                  # PPS xi resolution
+  single_arm_time_res_ps: 10.0    # PPS single arm time resolution (ps)
+vertices:
+  beam_sigma_z_cm: 5.7            # beam width: spread of vertices in z (cm)
+  pv_z_res_cm: 0.1                # central vertex z resolution (cm)
+  pv_t_res_ps: false              # central vertex time resolution (ps): false = do not use
+  nsigma: 2.0                     # number of sigmas to use in cuts
+tracks:
+  pt_min: 2.0                     # L1T track pT minimum (GeV)
+  eta_max: 2.4                    # L1T track eta maximum
+signal:
+  m_higgs_gev: 125.0              # Higgs mass (GeV)
+  mass_window_gev: 6.0            # width of mass window to use in cuts (GeV)
+central_smearing:
+  pt_rel: 0.10                    # Gaussian sigma = pt_rel * jet pt
+  eta: 0.0                        # Gaussian eta sigma
+  phi: 0.0                        # Gaussian phi sigma
+  mass_rel: 0.10                  # Gaussian sigma = mass_rel * jet mass
+random:
+  seed: 12345
