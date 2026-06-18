@@ -23,7 +23,6 @@ bkg-generation/logs/*
 *.dat
 *.json
 *.xml
-*.yaml
 *.zip
 *.tar.gz
 *.tar
