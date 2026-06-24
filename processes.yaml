@@ -1,49 +1,69 @@
 h_bb:
   process_code: 1
-  xsec_pb: null
+  xsec_fb: 5.9
   weight: 1.0
   jet_pdg_ids: [5, -5]
-  path: signal-generation/output/gamgam_bb/gamgam_bb_test/evrecs
-  campaigns: []
+  default_campaign: main
+  max_files: 1
+  campaigns:
+    main: "{superchic-output}/h_bb/superchic_h_bb_nev100000_j100_20260618_102527"
 h_cc:
   process_code: 85
-  path: /path/to/H_cc
-  xsec_pb: null
+  xsec_fb: 0.29
   weight: 1.0
   jet_pdg_ids: [4, -4]
+  default_campaign: main
+  max_files: 1
+  campaigns:
+    main: "{superchic-output}/h_cc/superchic_h_cc_nev100000_j100_20260618_102604"
 qcd_bb:
   process_code: 6
-  path: /path/to/QCD_bb
-  xsec_pb: null
+  xsec_fb: 38
   weight: 1.0
   jet_pdg_ids: [5, -5]
+  default_campaign: main
+  campaigns:
+    main: "{superchic-output}/qcd_bb/superchic_qcd_bb_nev1000_j100_20260619_051145"
+    current: "{superchic-output}/qcd_bb/superchic_qcd_bb_nev100000_j200_20260408_005040"
 qcd_cc:
   process_code: 5
-  path: /path/to/QCD_cc
-  xsec_pb: null
+  xsec_fb: 14
   weight: 1.0
   jet_pdg_ids: [4, -4]
+  default_campaign: main
+  campaigns:
+    main: "{superchic-output}/qcd_cc/superchic_qcd_cc_nev1000_j100_20260619_051218"
+    current: "{superchic-output}/qcd_cc/superchic_qcd_cc_nev1000_j200_20260526_074025"
 qed_bb:
   process_code: 63
-  path: signal-generation/output/gamgam_bb/gamgam_bb_test/evrecs
-  xsec_pb: null
+  xsec_fb: 2.4
   weight: 1.0
   jet_pdg_ids: [5, -5]
+  default_campaign: main
+  max_files: 1
+  campaigns:
+    main: "{superchic-output}/qed_bb/superchic_qed_bb_nev100000_j100_20260618_102544"
 qed_cc:
   process_code: 62
-  path: /path/to/QED_cc
-  xsec_pb: null
+  xsec_fb: 41
   weight: 1.0
   jet_pdg_ids: [4, -4]
+  default_campaign: main
+  campaigns:
+    main: "{superchic-output}/qed_cc/superchic_qed_cc_nev1000_j100_20260619_051224"
 qcd_qq:
   process_code: 4
-  path: /path/to/QCD_qq
-  xsec_pb: null
+  xsec_fb: 10
   weight: 1.0
   jet_pdg_ids: [1, -1, 2, -2, 3, -3]
+  default_campaign: main
+  campaigns:
+    main: "{superchic-output}/qcd_qq/superchic_qcd_qq_nev1000_j100_20260619_051230"
 qcd_gg:
   process_code: 3
-  path: /path/to/QCD_gg
-  xsec_pb: null
+  xsec_fb: 135000
   weight: 1.0
   jet_pdg_ids: [21, 21]
+  default_campaign: main
+  campaigns:
+    main: "{superchic-output}/qcd_gg/superchic_qcd_gg_nev1000_j100_20260619_051234"

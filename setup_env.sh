@@ -25,6 +25,8 @@ _higgs_cep_setup_main() {
   SUPERCHIC_DIR="${SUPERCHIC_DIR:-$CMSSW_PROJECT_DIR/SuperChic}"
   SUPERCHIC_INSTALL_DIR="${SUPERCHIC_INSTALL_DIR:-$SUPERCHIC_DIR/install}"
   SUPERCHIC_BUILD_DIR="${SUPERCHIC_BUILD_DIR:-$SUPERCHIC_DIR/build}"
+  DELPHES_DIR="${DELPHES_DIR:-/home/jfriesen/Delphes}"
+  DELPHES_LCG_VIEW="${DELPHES_LCG_VIEW:-/cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc12-opt/setup.sh}"
 
   if [[ ! -f /cvmfs/cms.cern.ch/cmsset_default.sh ]]; then
     echo "ERROR: /cvmfs/cms.cern.ch/cmsset_default.sh not found." >&2
@@ -122,10 +124,20 @@ _higgs_cep_setup_main() {
   export HIGGS_SIGNAL_DIR="$REPO_DIR/signal-generation"
   export HIGGS_BKG_DIR="$REPO_DIR/bkg-generation"
   export HIGGS_ANALYSIS_DIR="$REPO_DIR/analysis"
+  export HIGGS_SIM_DIR="$REPO_DIR/sim"
+  export DELPHES_DIR
+  export DELPHES_LCG_VIEW
+
+  if [[ -d "$DELPHES_DIR" ]]; then
+    _prepend_env_path PATH "$DELPHES_DIR"
+    _prepend_env_path LD_LIBRARY_PATH "$DELPHES_DIR"
+  fi
 
   CMSSW_REL=$(basename "$CMSSW_ROOT_DIR")
   printf 'Setup complete for %s.\n' "$CMSSW_REL"
   printf 'SuperChic dir: %s\n' "$SUPERCHIC_DIR"
+  printf 'Delphes dir: %s\n' "$DELPHES_DIR"
+  printf 'Delphes LCG view: %s\n' "$DELPHES_LCG_VIEW"
   printf 'Repo dir: %s\n' "$REPO_DIR"
 }
 if _higgs_cep_setup_main; then

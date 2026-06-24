@@ -152,3 +152,30 @@ Processed (minimal)
 
 
 Config
+
+
+
+
+gen-superchic
+gen-pythia
+
+Offline reconstruction:
+```
+Superchic
+↓
+Pythia shower/hadronization
+↓
+Delphes
+↓
+Tag weights
+    - Check number of jets = 2 ?
+↓
+Proton logic + weights
+```
+
+Weights:
+    Tagging
+    Proton pairs
+    x-sec * lumi / N 
+
+

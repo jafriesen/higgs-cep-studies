@@ -1,2 +1,8 @@
 paths:
-  superchic-output: /eos/user/j/jfriesen/higgs-cep-studies/generation-superchic/output
+  superchic-output: /home/jfriesen/CMSSW_15_0_0/src/higgs-cep-studies/generation-superchic/output
+  minbias-output: bkg-generation/output
+  delphes-dir: /home/jfriesen/Delphes
+minbias:
+  default_campaign: minbias_nbx100000_j100_mu200_poisson_20260519_174338
+sim:
+  delphes-card: "{delphes-dir}/cards/CMS_PhaseII/CMS_PhaseII_0PU_v03.tcl"

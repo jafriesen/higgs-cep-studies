@@ -1,0 +1,7 @@
+tagging:
+  eff_b: 0.85
+  eff_c: 0.65
+  mistag_light_to_b: 0.01
+  mistag_light_to_c: 0.1
+  mistag_c_to_b: 0.1
+  mistag_b_to_c: 0.055
