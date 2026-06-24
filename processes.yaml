@@ -1,69 +1,84 @@
-h_bb:
+Hbb:
   process_code: 1
   xsec_fb: 5.9
   weight: 1.0
   jet_pdg_ids: [5, -5]
-  default_campaign: main
-  max_files: 1
+  default_campaign: Hbb__v01
   campaigns:
-    main: "{superchic-output}/h_bb/superchic_h_bb_nev100000_j100_20260618_102527"
-h_cc:
+    Hbb__v01:
+      pythia: GEN_Pythia_Hbb__v01
+      delphes: Delphes_Hbb_CMS_PhaseII_0PU_v02__v01
+      # paths: Optional paths to the output files
+      #   superchic_path: Path to the superchic output
+      #   pythia_path: Path to the pythia output
+      #   delphes_path: Path to the delphes output
+Hcc:
   process_code: 85
   xsec_fb: 0.29
   weight: 1.0
   jet_pdg_ids: [4, -4]
-  default_campaign: main
-  max_files: 1
+  default_campaign: Hcc__v01
   campaigns:
-    main: "{superchic-output}/h_cc/superchic_h_cc_nev100000_j100_20260618_102604"
-qcd_bb:
+    Hcc__v01:
+      pythia: GEN_Pythia_Hcc__v01
+      delphes: Delphes_Hcc_CMS_PhaseII_0PU_v02__v01
+QCDbb:
   process_code: 6
   xsec_fb: 38
   weight: 1.0
   jet_pdg_ids: [5, -5]
-  default_campaign: main
+  default_campaign: QCDbb__v01
   campaigns:
-    main: "{superchic-output}/qcd_bb/superchic_qcd_bb_nev1000_j100_20260619_051145"
-    current: "{superchic-output}/qcd_bb/superchic_qcd_bb_nev100000_j200_20260408_005040"
-qcd_cc:
+    QCDbb__v01:
+      pythia: GEN_Pythia_QCDbb__v01
+      delphes: Delphes_QCDbb_CMS_PhaseII_0PU_v02__v01
+QCDcc:
   process_code: 5
   xsec_fb: 14
   weight: 1.0
   jet_pdg_ids: [4, -4]
-  default_campaign: main
+  default_campaign: QCDcc__v01
   campaigns:
-    main: "{superchic-output}/qcd_cc/superchic_qcd_cc_nev1000_j100_20260619_051218"
-    current: "{superchic-output}/qcd_cc/superchic_qcd_cc_nev1000_j200_20260526_074025"
-qed_bb:
+    QCDcc__v01:
+      pythia: GEN_Pythia_QCDcc__v01
+      delphes: Delphes_QCDcc_CMS_PhaseII_0PU_v02__v01
+QEDbb:
   process_code: 63
   xsec_fb: 2.4
   weight: 1.0
   jet_pdg_ids: [5, -5]
-  default_campaign: main
-  max_files: 1
+  default_campaign: QEDbb__v01
   campaigns:
-    main: "{superchic-output}/qed_bb/superchic_qed_bb_nev100000_j100_20260618_102544"
-qed_cc:
+    QEDbb__v01:
+      pythia: GEN_Pythia_QEDbb__v01
+      delphes: Delphes_QEDbb_CMS_PhaseII_0PU_v02__v01
+QEDcc:
   process_code: 62
   xsec_fb: 41
   weight: 1.0
   jet_pdg_ids: [4, -4]
-  default_campaign: main
+  default_campaign: QEDcc__v01
   campaigns:
-    main: "{superchic-output}/qed_cc/superchic_qed_cc_nev1000_j100_20260619_051224"
-qcd_qq:
+    QEDcc__v01:
+      pythia: GEN_Pythia_QEDcc__v01
+      delphes: Delphes_QEDcc_CMS_PhaseII_0PU_v02__v01
+QCDqq:
   process_code: 4
   xsec_fb: 10
   weight: 1.0
   jet_pdg_ids: [1, -1, 2, -2, 3, -3]
-  default_campaign: main
+  default_campaign: QCDqq__v01
   campaigns:
-    main: "{superchic-output}/qcd_qq/superchic_qcd_qq_nev1000_j100_20260619_051230"
-qcd_gg:
+    QCDqq__v01:
+      pythia: GEN_Pythia_QCDqq__v01
+      delphes: Delphes_QCDqq_CMS_PhaseII_0PU_v02__v01
+QCDgg:
   process_code: 3
   xsec_fb: 135000
   weight: 1.0
   jet_pdg_ids: [21, 21]
-  default_campaign: main
+  default_campaign: QCDgg__v01
   campaigns:
-    main: "{superchic-output}/qcd_gg/superchic_qcd_gg_nev1000_j100_20260619_051234"
+    QCDgg__v01:
+      pythia: GEN_Pythia_QCDgg__v01
+      delphes: Delphes_QCDgg_CMS_PhaseII_0PU_v02__v01
