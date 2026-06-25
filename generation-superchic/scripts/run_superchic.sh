@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 
+set -o pipefail
+
 usage() {
   cat <<'USAGE'
 Usage:
   run_superchic.sh \
     [--process <process_name>] [--card <dat_file>] \
     [--nev <events>] [--seed <seed>] [--out-tag <tag>] \
-    [--output-base <dir>] [--job <job_index>]
+    [--output-dir <dir>] [--job <job_index>] [--init]
 
 Examples:
   ./run_superchic.sh
-  ./run_superchic.sh --process h_cc --nev 10000 --seed 1001 --out-tag hbb_001 --job 1
+  ./run_superchic.sh --process Hbb --nev 1000 --seed 1001 --out-tag Hbb__test --job 1 --init
 USAGE
   exit 1
 }
@@ -18,16 +20,19 @@ USAGE
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STUDY_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ROOT_DIR="$STUDY_DIR/generation-superchic"
+PATH_HELPER="$STUDY_DIR/common/path_helper.py"
+INIT_SCRIPT="$SCRIPT_DIR/prepare_superchic_init.sh"
 
 source "$STUDY_DIR/setup_env.sh"
 
-PROCESS="h_bb"
+PROCESS="Hbb"
 CARD=""
 NEVT=100
 SEED=""
 CAMPAIGN_TAG=""
-OUTPUT_BASE=""
+OUTPUT_DIR=""
 JOB_INDEX=""
+RUN_INIT=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -36,15 +41,15 @@ while [[ $# -gt 0 ]]; do
     --nev|--events) NEVT="$2"; shift 2 ;;
     --seed) SEED="$2"; shift 2 ;;
     --out-tag|--tag) CAMPAIGN_TAG="$2"; shift 2 ;;
-    --output-base) OUTPUT_BASE="$2"; shift 2 ;;
+    --output-dir) OUTPUT_DIR="$2"; shift 2 ;;
     --job) JOB_INDEX="$2"; shift 2 ;;
+    --init) RUN_INIT=true; shift ;;
     -h|--help) usage ;;
     *) echo "ERROR: unknown argument: $1" >&2; usage ;;
   esac
 done
 
-[[ -n "$OUTPUT_BASE" ]] || OUTPUT_BASE="$ROOT_DIR/output/$PROCESS"
-[[ -n "$CAMPAIGN_TAG" ]] || CAMPAIGN_TAG="$PROCESS"
+[[ -n "$CAMPAIGN_TAG" ]] || CAMPAIGN_TAG="${PROCESS}__test"
 
 if [[ -n "$JOB_INDEX" ]]; then
   [[ -n "$SEED" ]] || SEED=$((1000 + JOB_INDEX))
@@ -54,46 +59,66 @@ else
   JOB_TAG="$CAMPAIGN_TAG"
 fi
 
-if [[ -z "$CARD" ]]; then
-  CARD_CANDIDATES=(
-    "$ROOT_DIR/cards/$PROCESS.DAT"
-    "$SUPERCHIC_DIR/bin/$PROCESS/$PROCESS.DAT"
-    "$SUPERCHIC_DIR/Cards/$PROCESS.DAT"
-  )
-  for candidate in "${CARD_CANDIDATES[@]}"; do
-    if [[ -f "$candidate" ]]; then
-      CARD="$candidate"
-      break
-    fi
-  done
+PATH_ARGS=(--process "$PROCESS" --campaign "$CAMPAIGN_TAG")
+if [[ -n "$OUTPUT_DIR" ]]; then
+  PATH_ARGS+=(--output-dir "$OUTPUT_DIR")
 fi
+PATH_ENV="$(python3 "$PATH_HELPER" superchic-env "${PATH_ARGS[@]}")" || exit 1
+eval "$PATH_ENV"
 
-if [[ -n "$CARD" && "$CARD" != /* ]]; then
-  CARD="$STUDY_DIR/$CARD"
+mkdir -p "$SUPERCHIC_LOGS_DIR"
+LOG="$SUPERCHIC_LOGS_DIR/run_${JOB_TAG}.log"
+: > "$LOG"
+
+log_step() {
+  printf '[%(%Y-%m-%d %H:%M:%S)T] %s\n' -1 "$*" | tee -a "$LOG"
+}
+
+log_step "Starting SuperChic run"
+log_step "Process: $PROCESS"
+log_step "Campaign: $CAMPAIGN"
+log_step "Job tag: $JOB_TAG"
+log_step "SuperChic output dir: $SUPERCHIC_ROOT"
+log_step "Log file: $LOG"
+
+if [[ -z "$CARD" ]]; then
+  CARD="$ROOT_DIR/cards/$PROCESS.DAT"
 fi
 
 if [[ ! -f "$CARD" ]]; then
-  echo "ERROR: card not found for process $PROCESS." >&2
-  echo "Tried: ${CARD_CANDIDATES[*]}" >&2
+  log_step "ERROR: card not found for process $PROCESS"
+  log_step "Tried: $CARD"
   exit 1
 fi
+log_step "Using card: $CARD"
 
-if ! command -v superchic >/dev/null 2>&1; then
-  echo "ERROR: superchic is not in PATH. Check SuperChic build and setup_env.sh." >&2
+SUPERCHIC_EXE=""
+for candidate in \
+  "$SUPERCHIC_DIR/install/bin/superchic" \
+  "$SUPERCHIC_DIR/build/bin/superchic"; do
+  if [[ -x "$candidate" ]]; then
+    SUPERCHIC_EXE="$candidate"
+    break
+  fi
+done
+if [[ -z "$SUPERCHIC_EXE" ]]; then
+  log_step "ERROR: SuperChic executable not found under $SUPERCHIC_DIR"
+  log_step "Expected $SUPERCHIC_DIR/install/bin/superchic or $SUPERCHIC_DIR/build/bin/superchic"
   exit 1
 fi
-if ! command -v init >/dev/null 2>&1; then
-  echo "ERROR: init is not in PATH. Check SuperChic build and setup_env.sh." >&2
-  exit 1
-fi
+log_step "Using superchic: $SUPERCHIC_EXE"
 
 WORK_ROOT="$ROOT_DIR/workspace"
-OUT_ROOT="$OUTPUT_BASE/$CAMPAIGN_TAG"
-LOG_ROOT="$OUT_ROOT/logs"
-mkdir -p "$WORK_ROOT" "$LOG_ROOT" "$OUT_ROOT/cards"
+mkdir -p \
+  "$WORK_ROOT" \
+  "$SUPERCHIC_LOGS_DIR" \
+  "$SUPERCHIC_CARDS_DIR" \
+  "$SUPERCHIC_EVRECS_DIR" \
+  "$SUPERCHIC_OUTPUT_DIR"
 
 RUN_DIR="$(mktemp -d "$WORK_ROOT/run_${PROCESS}_${JOB_TAG}_XXXXXX")"
 trap 'rm -rf "$RUN_DIR"' EXIT
+log_step "Work dir: $RUN_DIR"
 
 CARD_LOCAL="$RUN_DIR/job.DAT"
 JOB_TAG_QUOTED="'$JOB_TAG'"
@@ -113,13 +138,15 @@ for candidate in "${SUPERCHIC_CARDS_DIR_CANDIDATES[@]}"; do
   fi
 done
 if [[ -z "$SUPERCHIC_CARDS_DIR" ]]; then
-  echo "ERROR: SuperChic Cards directory not found for runtime." >&2
-  echo "Tried: \$SUPERCHIC_DIR/Cards and install/build share/doc locations." >&2
+  log_step "ERROR: SuperChic Cards directory not found for runtime"
+  log_step "Tried: \$SUPERCHIC_DIR/Cards and install/build share/doc locations"
   exit 1
 fi
+log_step "Staging SuperChic runtime cards from $SUPERCHIC_CARDS_DIR"
 mkdir -p "$RUN_DIR/Cards"
 cp -f "$SUPERCHIC_CARDS_DIR"/* "$RUN_DIR/Cards/"
 
+log_step "Writing job card: $CARD_LOCAL"
 awk -v outtg="$JOB_TAG_QUOTED" -v iseed="$SEED" -v nev="$NEVT" '
   /\[outtg\]/ { print outtg "          ! [outtg]"; next }
   /\[iseed\]/ { print iseed "           ! [iseed] : Random number seed (integer > 0)"; next }
@@ -127,64 +154,60 @@ awk -v outtg="$JOB_TAG_QUOTED" -v iseed="$SEED" -v nev="$NEVT" '
   { print }
 ' "$CARD" > "$CARD_LOCAL"
 
-LOG="$LOG_ROOT/run_${JOB_TAG}.log"
-{
-  echo "=== run_superchic: preparing init inputs ==="
-} > "$LOG"
+log_step "Reading init parameters from job card"
 
-INIT_RTS=$(awk '/\[rts\]/ {print $1; exit}' "$CARD_LOCAL")
-INIT_ISURV=$(awk '/\[isurv\]/ {print $1; exit}' "$CARD_LOCAL")
 INIT_INTAG=$(awk '/\[intag\]/ {gsub(/'\''/, "", $1); print $1; exit}' "$CARD_LOCAL")
-INIT_PDFNAME=$(awk '/\[PDFname\]/ {gsub(/'\''/, "", $1); print $1; exit}' "$CARD_LOCAL")
-INIT_PDFMEMBER=$(awk '/\[PDFmember\]/ {print $1; exit}' "$CARD_LOCAL")
 INIT_SCREEN_FILE="screening${INIT_INTAG}.dat"
 
-INIT_KEY="$(printf '%s|%s|%s|%s|%s\n' "$INIT_RTS" "$INIT_ISURV" "$INIT_INTAG" "$INIT_PDFNAME" "$INIT_PDFMEMBER" | sha1sum | awk '{print $1}')"
-INIT_CACHE_ROOT="$WORK_ROOT/init_cache"
-INIT_CACHE_DIR="$INIT_CACHE_ROOT/$INIT_KEY"
+INIT_INPUTS_DIR="$SUPERCHIC_ROOT/init/inputs"
+PREPARE_INIT_COMMAND=("$INIT_SCRIPT" --process "$PROCESS" --out-tag "$CAMPAIGN_TAG" --card "$CARD")
+if [[ -n "$OUTPUT_DIR" ]]; then
+  PREPARE_INIT_COMMAND+=(--output-dir "$OUTPUT_DIR")
+fi
+printf -v PREPARE_INIT_DISPLAY '%q ' "${PREPARE_INIT_COMMAND[@]}"
+PREPARE_INIT_DISPLAY="${PREPARE_INIT_DISPLAY% }"
 
-mkdir -p "$INIT_CACHE_ROOT"
-
-if [[ -f "$INIT_CACHE_DIR/inputs/$INIT_SCREEN_FILE" ]]; then
-  echo "Using cached init inputs for intag='$INIT_INTAG'."
-  echo "Using cached init inputs: $INIT_CACHE_DIR/inputs" >> "$LOG"
-  cp -rf "$INIT_CACHE_DIR/inputs" "$RUN_DIR/inputs"
-else
-  echo "Running SuperChic init for intag='$INIT_INTAG' (first time may take several minutes)..."
-  echo "No cached init inputs found. Running init for key $INIT_KEY..." >> "$LOG"
-  (
-    cd "$RUN_DIR"
-    init < job.DAT
-  ) >> "$LOG" 2>&1
-
-  if [[ ! -f "$RUN_DIR/inputs/$INIT_SCREEN_FILE" ]]; then
-    echo "ERROR: init did not produce expected file inputs/$INIT_SCREEN_FILE in $RUN_DIR" >> "$LOG"
+if [[ "$RUN_INIT" == true ]]; then
+  log_step "Preparing initialized inputs via $INIT_SCRIPT"
+  if ! "${PREPARE_INIT_COMMAND[@]}" 2>&1 | tee -a "$LOG"; then
+    log_step "ERROR: init preparation failed"
     exit 1
   fi
-
-  mkdir -p "$INIT_CACHE_DIR"
-  cp -rf "$RUN_DIR/inputs" "$INIT_CACHE_DIR/inputs"
 fi
 
-echo "=== run_superchic: running superchic ===" >> "$LOG"
-(
+if [[ ! -f "$INIT_INPUTS_DIR/$INIT_SCREEN_FILE" ]]; then
+  log_step "ERROR: initialized SuperChic inputs missing: $INIT_INPUTS_DIR/$INIT_SCREEN_FILE"
+  log_step "Run this before running jobs: $PREPARE_INIT_DISPLAY"
+  log_step "Alternatively, rerun run_superchic.sh with --init."
+  exit 1
+fi
+
+log_step "Using initialized inputs from $INIT_INPUTS_DIR"
+cp -rf "$INIT_INPUTS_DIR" "$RUN_DIR/inputs"
+
+log_step "Running superchic"
+if ! (
   cd "$RUN_DIR"
-  superchic < job.DAT
-) >> "$LOG" 2>&1
+  "$SUPERCHIC_EXE" < job.DAT
+) 2>&1 | tee -a "$LOG"; then
+  log_step "ERROR: superchic failed"
+  exit 1
+fi
 
 if [[ -d "$RUN_DIR/evrecs" ]]; then
-  mkdir -p "$OUT_ROOT/evrecs"
-  cp -f "$RUN_DIR/evrecs"/* "$OUT_ROOT/evrecs/" 2>/dev/null || true
+  log_step "Copying evrec files to $SUPERCHIC_EVRECS_DIR"
+  cp -f "$RUN_DIR/evrecs"/* "$SUPERCHIC_EVRECS_DIR/" 2>/dev/null || true
+else
+  log_step "No evrecs directory produced"
 fi
 
 if [[ -d "$RUN_DIR/outputs" ]]; then
-  mkdir -p "$OUT_ROOT/outputs"
-  cp -f "$RUN_DIR/outputs"/* "$OUT_ROOT/outputs/" 2>/dev/null || true
+  log_step "Copying output files to $SUPERCHIC_OUTPUT_DIR"
+  cp -f "$RUN_DIR/outputs"/* "$SUPERCHIC_OUTPUT_DIR/" 2>/dev/null || true
+else
+  log_step "No outputs directory produced"
 fi
 
-cp -f "$CARD_LOCAL" "$OUT_ROOT/cards/job_${JOB_TAG}.DAT"
-
-echo "Process: $PROCESS"
-echo "Card source: $CARD"
-echo "Output dir: $OUT_ROOT"
-echo "Log file:   $LOG"
+log_step "Saving resolved job card to $SUPERCHIC_CARDS_DIR/job_${JOB_TAG}.DAT"
+cp -f "$CARD_LOCAL" "$SUPERCHIC_CARDS_DIR/job_${JOB_TAG}.DAT"
+log_step "Finished SuperChic run"

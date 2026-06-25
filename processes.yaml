@@ -8,10 +8,12 @@ Hbb:
     Hbb__v01:
       pythia: GEN_Pythia_Hbb__v01
       delphes: Delphes_Hbb_CMS_PhaseII_0PU_v02__v01
-      # paths: Optional paths to the output files
-      #   superchic_path: Path to the superchic output
-      #   pythia_path: Path to the pythia output
-      #   delphes_path: Path to the delphes output
+      paths:
+        # optional overrides
+        # campaign: /external/Hbb/Hbb__v01
+        # superchic: /external/Hbb/Hbb__v01/SuperChic
+        # pythia: /external/Hbb/Hbb__v01/Pythia/GEN_Pythia_Hbb__v01
+        # delphes: /external/Hbb/Hbb__v01/Delphes/Delphes_Hbb_CMS_PhaseII_0PU_v02__v01
 Hcc:
   process_code: 85
   xsec_fb: 0.29

@@ -3,7 +3,7 @@
 ****************************************************************************************
 1.40d4           !  [rts] : CMS collision energy (GeV)
 4	       !  [isurv] : Model of soft survival (from 1 -> 4, corresponding to arXiv:1306.2149)
-'in140_qcd_gg'         !  [intag] for input files 
+'in140_QCDgg'         !  [intag] for input files 
 ****************************************************************************************
 ****************************************************************************************
 'NNPDF31_nnlo_as_0118'   ! [PDFname] : PDF set
@@ -28,21 +28,25 @@
 .false.  ! [ionbreakup] : set to .true. if include ion breakup, false if inclusive
 'AA'    ! [fAA] : if ionbreakup=.true. then specifies breakup type
 1d0     ! [fracsigX] : multiply sig_(gamA) by this factor (1d0 - default)
+.false.  ! [veto] : impose exclusivity veto in ion-ion case due to EMD
+53.9655d0 ! [veto_ecent]
+263.313d0 ! [veto_eden]
+0.4d0 ! [rshad]
 .false.  ! [wrho] : generate concident rho production in AA collisions
-2.5d0    ! [yrho] : maximum rho |y|
-1d0      ! [accrho] : additional correction factor to account for rho->pipi acceptance, non-resonant dipions and different beams
-.false.     ! [ion_incoh]
-'inel'   ! [ion_incoh_type]  
+3.86d0    ! [yrho] : maximum rho |y|
+1.2d0      ! [accrho] : additional correction factor to account for rho->pipi acceptance, non-resonant dipions and different beams
+.false.   ! [ion_incoh] : inelastic emission in ion-ion case
+'inel'   ! [ion_incoh_type] : type of inelastic emission, 'inel' or 'el'
 ****************************************************************************************
 ************************* Integration parameters ***************************************
 ****************************************************************************************
 10000       ! [ncall] : Number of calls for preconditioning
 10          ! [itmx] : Number of iterations for preconditioning
-1d0          ! [prec]
-10000       ! [ncall1] : Number of calls in first iteration
-10000       ! [inccall] : Number of increase calls per iteration
+10d0          ! [prec]
+1000       ! [ncall1] : Number of calls in first iteration
+1000       ! [inccall] : Number of increase calls per iteration
 1000        ! [itend] : Maximum number of iterations
-@SEED@           ! [iseed] : Random number seed (integer > 0)
+@SEED@        ! [iseed] : Random number seed (integer > 0)
 ****************************************************************************************
 ******************************* Unweighted events **************************************
 ****************************************************************************************
@@ -56,8 +60,8 @@
 ****************************************************************************************
 -2.5d0          ! [ymin]
 2.5d0          ! [ymax]
-90.0d0          ! [mmin]
-200.0d0          ! [mmax]
+46.0d0          ! [mmin]
+100000.0d0          ! [mmax]
 .true.        ! [gencuts] : Generate cuts below
 .true.        ! [scorr] : Include spin correlations
 .true.	      ! [fwidth] : Include finite width 
@@ -70,12 +74,12 @@
 ****************************************************************************************
 ************************* 2 body final states : p(a) + p(b) ****************************
 ****************************************************************************************
-2d0         ! [ptamin]
-2d0         ! [ptbmin]
--3.0d0       ! [etaamin]
-3.0d0        ! [etaamax]
--3.0d0       ! [etabmin]
-3.0d0        ! [etabmax]
+1d0         ! [ptamin]
+1d0         ! [ptbmin]
+-3.5d0       ! [etaamin]
+3.5d0        ! [etaamax]
+-3.5d0       ! [etabmin]
+3.5d0        ! [etabmax]
 1d10        ! [acoabmax]
 ****************************************************************************************
 ********************** 3 body final states : p(a) + p(b) + p(c) ************************
@@ -107,12 +111,12 @@
 ****************************************************************************************
 *********** 6 body final states : p(a) + p(b) + p(c)+ p(d) + p(e) + p(f) ***************
 ****************************************************************************************
-2d0         ! [ptamin]
-2d0         ! [ptbmin]
-2d0         ! [ptcmin]
-2d0         ! [ptdmin]
-2d0         ! [ptemin]
-2d0         ! [ptfmin]
+0d0         ! [ptamin]
+0d0         ! [ptbmin]
+0d0         ! [ptcmin]
+0d0         ! [ptdmin]
+0d0         ! [ptemin]
+0d0         ! [ptfmin]
 -2.5d1      ! [etaamin]
 2.5d1       ! [etaamax]
 -2.5d1      ! [etabmin]

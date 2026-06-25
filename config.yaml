@@ -1,7 +1,5 @@
 paths:
-  superchic-output: /home/jfriesen/CMSSW_15_0_0/src/higgs-cep-studies/generation-superchic/output
-  minbias-output: bkg-generation/output
-  delphes-dir: /home/jfriesen/Delphes
+  output_dir: output/
 minbias:
   default_campaign: minbias_nbx100000_j100_mu200_poisson_20260519_174338
 sim:

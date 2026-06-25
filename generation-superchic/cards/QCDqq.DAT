@@ -3,15 +3,15 @@
 ****************************************************************************************
 1.40d4           !  [rts] : CMS collision energy (GeV)
 4	       !  [isurv] : Model of soft survival (from 1 -> 4, corresponding to arXiv:1306.2149)
-'in140_h_cc'         !  [intag] for input files 
+'in140_QCDqq'         !  [intag] for input files 
 ****************************************************************************************
 ****************************************************************************************
 'NNPDF31_nnlo_as_0118'   ! [PDFname] : PDF set
 0                    ! [PDFmember] : PDF member
 ****************************************************************************************
-85      !  [proc] : Process number (H -> cc)
+4      ! [proc] : Process number (qq dijets (massless))
 'prot'  ! [beam] : Beam type ('prot', 'ion', 'ionp' or 'el')
-@OUT@          ! [outtg]
+'@OUT@'          ! [outtg]
 .true.  !  [sfaci] : Include soft survival effects
 ****************************************************************************************
 ************************* Dissociation parameters for PI  ******************************
@@ -28,19 +28,23 @@
 .false.  ! [ionbreakup] : set to .true. if include ion breakup, false if inclusive
 'AA'    ! [fAA] : if ionbreakup=.true. then specifies breakup type
 1d0     ! [fracsigX] : multiply sig_(gamA) by this factor (1d0 - default)
+.false.  ! [veto] : impose exclusivity veto in ion-ion case due to EMD
+53.9655d0 ! [veto_ecent]
+263.313d0 ! [veto_eden]
+0.4d0 ! [rshad]
 .false.  ! [wrho] : generate concident rho production in AA collisions
-2.5d0    ! [yrho] : maximum rho |y|
-1d0      ! [accrho] : additional correction factor to account for rho->pipi acceptance, non-resonant dipions and different beams
-.false.     ! [ion_incoh]
-'inel'   ! [ion_incoh_type]  
+3.86d0    ! [yrho] : maximum rho |y|
+1.2d0      ! [accrho] : additional correction factor to account for rho->pipi acceptance, non-resonant dipions and different beams
+.false.   ! [ion_incoh] : inelastic emission in ion-ion case
+'inel'   ! [ion_incoh_type] : type of inelastic emission, 'inel' or 'el'
 ****************************************************************************************
 ************************* Integration parameters ***************************************
 ****************************************************************************************
 10000       ! [ncall] : Number of calls for preconditioning
 10          ! [itmx] : Number of iterations for preconditioning
-1d0          ! [prec]
-10000       ! [ncall1] : Number of calls in first iteration
-10000       ! [inccall] : Number of increase calls per iteration
+10d0          ! [prec]
+1000       ! [ncall1] : Number of calls in first iteration
+1000       ! [inccall] : Number of increase calls per iteration
 1000        ! [itend] : Maximum number of iterations
 @SEED@        ! [iseed] : Random number seed (integer > 0)
 ****************************************************************************************
@@ -72,10 +76,10 @@
 ****************************************************************************************
 1d0         ! [ptamin]
 1d0         ! [ptbmin]
--3.0d0       ! [etaamin]
-3.0d0        ! [etaamax]
--3.0d0       ! [etabmin]
-3.0d0        ! [etabmax]
+-3.5d0       ! [etaamin]
+3.5d0        ! [etaamax]
+-3.5d0       ! [etabmin]
+3.5d0        ! [etabmax]
 1d10        ! [acoabmax]
 ****************************************************************************************
 ********************** 3 body final states : p(a) + p(b) + p(c) ************************
