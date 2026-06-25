@@ -11,6 +11,8 @@ generation-superchic/logs/*
 generation-superchic/output/*
 bkg-generation/output/*
 bkg-generation/logs/*
+output/*
+generation-superchic/workspace/*
 
 # Ignore output files
 *.root
