@@ -1,6 +1,7 @@
 paths:
   output_dir: output/
+  minbias-output: "{output_dir}/minbias"
 minbias:
-  default_campaign: minbias_nbx100000_j100_mu200_poisson_20260519_174338
+  default_campaign: minbias__test
 sim:
-  delphes-card: "{delphes-dir}/cards/CMS_PhaseII/CMS_PhaseII_0PU_v03.tcl"
+  delphes-card: "sim/Cards/CMS_PhaseII_0PU_v02.tcl"

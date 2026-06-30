@@ -5,7 +5,6 @@ Preflight for this repo:
 2. Run analysis commands from the repo root.
 3. Before Python analysis checks, run:
    source setup_env.sh
-   cmsenv
 
 ## Working Style
 
@@ -36,15 +35,14 @@ Keep changes in the relevant area. Do not move code across areas unless requeste
 ## Commands
 
 - Run project commands from the repository root unless a README or script says otherwise.
-- Most commands in this repo, including Python scripts, need the CMSSW/SuperChic environment.
+- Most commands in this repo, including Python scripts, require a step to set up the environment.
 - Before running analysis, generation, or validation commands, run:
 
 ```bash
 source setup_env.sh
-cmsenv
 ```
 
-- If a command fails because Python, CMSSW, ROOT, LHAPDF, SuperChic, or another expected dependency is missing, re-run it only after confirming both setup commands were run in the current shell.
+- If a command fails because Python, ROOT, LHAPDF, SuperChic, or another expected dependency is missing, re-run it only after confirming both setup commands were run in the current shell.
 
 ## Verification
 
@@ -59,8 +57,7 @@ For shell scripts:
 
 For environment changes:
 - run `source setup_env.sh`
-- run `cmsenv`
-- verify expected variables with `env | rg 'HIGGS_|SUPERCHIC|CMSSW|LHAPDF'`
+- verify expected variables with `env | rg 'HIGGS_|SUPERCHIC|LHAPDF'`
 
 ## Analysis Discipline
 

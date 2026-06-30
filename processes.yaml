@@ -3,11 +3,11 @@ Hbb:
   xsec_fb: 5.9
   weight: 1.0
   jet_pdg_ids: [5, -5]
-  default_campaign: Hbb__v01
+  default_campaign: Hbb__test
   campaigns:
-    Hbb__v01:
-      pythia: GEN_Pythia_Hbb__v01
-      delphes: Delphes_Hbb_CMS_PhaseII_0PU_v02__v01
+    Hbb__test:
+      pythia: Hbb__test
+      delphes: Hbb__test
       paths:
         # optional overrides
         # campaign: /external/Hbb/Hbb__v01
@@ -19,68 +19,68 @@ Hcc:
   xsec_fb: 0.29
   weight: 1.0
   jet_pdg_ids: [4, -4]
-  default_campaign: Hcc__v01
+  default_campaign: Hcc__test
   campaigns:
-    Hcc__v01:
-      pythia: GEN_Pythia_Hcc__v01
-      delphes: Delphes_Hcc_CMS_PhaseII_0PU_v02__v01
+    Hcc__test:
+      pythia: Hcc__test
+      delphes: Hcc__test
 QCDbb:
   process_code: 6
-  xsec_fb: 38
+  xsec_fb: 1650
   weight: 1.0
   jet_pdg_ids: [5, -5]
-  default_campaign: QCDbb__v01
+  default_campaign: QCDbb__test
   campaigns:
-    QCDbb__v01:
-      pythia: GEN_Pythia_QCDbb__v01
-      delphes: Delphes_QCDbb_CMS_PhaseII_0PU_v02__v01
+    QCDbb__test:
+      pythia: QCDbb__test
+      delphes: QCDbb__test
 QCDcc:
   process_code: 5
-  xsec_fb: 14
+  xsec_fb: 337
   weight: 1.0
   jet_pdg_ids: [4, -4]
-  default_campaign: QCDcc__v01
+  default_campaign: QCDcc__test
   campaigns:
-    QCDcc__v01:
-      pythia: GEN_Pythia_QCDcc__v01
-      delphes: Delphes_QCDcc_CMS_PhaseII_0PU_v02__v01
+    QCDcc__test:
+      pythia: QCDcc__test
+      delphes: QCDcc__test
 QEDbb:
   process_code: 63
-  xsec_fb: 2.4
+  xsec_fb: 2.85
   weight: 1.0
   jet_pdg_ids: [5, -5]
-  default_campaign: QEDbb__v01
+  default_campaign: QEDbb__test
   campaigns:
-    QEDbb__v01:
-      pythia: GEN_Pythia_QEDbb__v01
-      delphes: Delphes_QEDbb_CMS_PhaseII_0PU_v02__v01
+    QEDbb__test:
+      pythia: QEDbb__test
+      delphes: QEDbb__test
 QEDcc:
   process_code: 62
-  xsec_fb: 41
+  xsec_fb: 48.9
   weight: 1.0
   jet_pdg_ids: [4, -4]
-  default_campaign: QEDcc__v01
+  default_campaign: QEDcc__test
   campaigns:
-    QEDcc__v01:
-      pythia: GEN_Pythia_QEDcc__v01
-      delphes: Delphes_QEDcc_CMS_PhaseII_0PU_v02__v01
+    QEDcc__test:
+      pythia: QEDcc__test
+      delphes: QEDcc__test
 QCDqq:
   process_code: 4
-  xsec_fb: 10
+  xsec_fb: 93
   weight: 1.0
   jet_pdg_ids: [1, -1, 2, -2, 3, -3]
-  default_campaign: QCDqq__v01
+  default_campaign: QCDqq__test
   campaigns:
-    QCDqq__v01:
-      pythia: GEN_Pythia_QCDqq__v01
-      delphes: Delphes_QCDqq_CMS_PhaseII_0PU_v02__v01
+    QCDqq__test:
+      pythia: QCDqq__test
+      delphes: QCDqq__test
 QCDgg:
   process_code: 3
-  xsec_fb: 135000
+  xsec_fb: 10326000
   weight: 1.0
   jet_pdg_ids: [21, 21]
-  default_campaign: QCDgg__v01
+  default_campaign: QCDgg__test
   campaigns:
-    QCDgg__v01:
-      pythia: GEN_Pythia_QCDgg__v01
-      delphes: Delphes_QCDgg_CMS_PhaseII_0PU_v02__v01
+    QCDgg__test:
+      pythia: QCDgg__test
+      delphes: QCDgg__test

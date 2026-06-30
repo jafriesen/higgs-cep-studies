@@ -1,0 +1,13 @@
+MAXEV       1000
+TYPEPR      'EXC'
+TYPINT      'QCD'
+ECMS        14000.
+IPROC       16005
+NFLUX       16
+YJMAX       2.4
+YJMIN      -2.4
+PTMIN       4.0
+YWWMIN      0.002
+YWWMAX      0.2
+OUTPUT      0
+OUTPUTLHE   1

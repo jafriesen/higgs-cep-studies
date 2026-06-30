@@ -21,6 +21,7 @@ COLLECTIONS = (
     ("GenJet", "generator jets", "#c93c3c"),
     ("FastJet", "raw reconstructed fast jets", "#2f6fb0"),
     ("Jet", "calibrated/reconstructed jets", "#3f8f45"),
+    ("JetPUPPI", "PUPPI-filtered jets", "#999999"),
 )
 
 VARIABLES = (

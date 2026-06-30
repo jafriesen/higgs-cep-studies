@@ -104,13 +104,10 @@ def pythia_campaign(process, campaign=None):
     return name
 
 
-def pythia_root(process, campaign=None, output_dir=None):
-    _, cfg = campaign_config(process, campaign)
-    if output_dir is None:
-        override = _override_path(cfg, "pythia")
-        if override is not None:
-            return override
-    return campaign_root(process, campaign, output_dir=output_dir) / "Pythia" / pythia_campaign(process, campaign)
+def pythia_root(process, campaign=None, tag=None, output_dir=None):
+    if tag is None:
+        tag = pythia_campaign(process, campaign)
+    return campaign_root(process, campaign, output_dir=output_dir) / "Pythia" / tag
 
 
 def delphes_campaign(process, campaign=None):
@@ -121,13 +118,13 @@ def delphes_campaign(process, campaign=None):
     return name
 
 
-def delphes_root(process, campaign=None, output_dir=None):
-    _, cfg = campaign_config(process, campaign)
-    if output_dir is None:
+def delphes_root(process, campaign=None, tag=None, output_dir=None):
+    campaign_name, cfg = campaign_config(process, campaign, require_known=False)
+    if tag is None and output_dir is None:
         override = _override_path(cfg, "delphes")
         if override is not None:
             return override
-    return campaign_root(process, campaign, output_dir=output_dir) / "Delphes" / delphes_campaign(process, campaign)
+    return campaign_root(process, campaign, output_dir=output_dir) / "Delphes" / (tag or campaign_name)
 
 
 def superchic_env(process, campaign=None, output_dir=None):

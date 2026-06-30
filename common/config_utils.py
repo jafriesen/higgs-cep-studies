@@ -122,3 +122,16 @@ def discover_npz_files(path, max_files=None):
     if not files:
         raise RuntimeError(f"No .npz files found in {path}")
     return files
+
+
+def discover_hepmc_files(path, max_files=None):
+    path = resolve_path(path)
+    if path.is_file():
+        files = [path]
+    else:
+        files = sorted(path.glob("*.hepmc"), key=natural_key)
+    if max_files is not None:
+        files = files[:max_files]
+    if not files:
+        raise RuntimeError(f"No .hepmc files found in {path}")
+    return files

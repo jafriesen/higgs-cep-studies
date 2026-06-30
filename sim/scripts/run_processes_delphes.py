@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 import argparse
+import contextlib
 import os
+import re
 import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -15,7 +18,8 @@ def repo_root():
 ROOT = repo_root()
 sys.path.insert(0, str(ROOT))
 
-from common.config_utils import load_yaml, resolve_process_campaign, resolve_template_path  # noqa: E402
+from common.config_utils import discover_hepmc_files, load_yaml, resolve_template_path  # noqa: E402
+from common.path_helper import campaign_config, delphes_root, pythia_campaign, pythia_root  # noqa: E402
 
 
 def parse_args():
@@ -31,7 +35,25 @@ def parse_args():
     parser.add_argument(
         "--campaign",
         default=None,
-        help="Campaign key to use for every selected process. Defaults to each process default_campaign.",
+        help="Main campaign name to use for every selected process. Defaults to each process default_campaign.",
+    )
+    parser.add_argument(
+        "--pythia-tag",
+        default=None,
+        help="Pythia campaign name within the main campaign's Pythia folder. Defaults to the campaign config.",
+    )
+    parser.add_argument(
+        "--tag",
+        "--delphes-tag",
+        dest="tag",
+        default=None,
+        help="Delphes campaign name within the main campaign's Delphes folder. Defaults to the campaign name.",
+    )
+    parser.add_argument(
+        "--max-files",
+        type=int,
+        default=None,
+        help="Optional Pythia input file cap per process.",
     )
     parser.add_argument(
         "--overwrite",
@@ -62,13 +84,33 @@ def selected_processes(processes, requested):
 
 
 def configured_delphes_dir(config):
+    path = os.environ.get("DELPHES_DIR") or os.environ.get("HIGGS_CEP_DELPHES_DIR")
+    if path:
+        return resolve_template_path(path, config, base=ROOT)
+
     path = config.get("paths", {}).get("delphes-dir")
-    if not path:
-        raise RuntimeError("config.yaml must define paths.delphes-dir")
-    return resolve_template_path(path, config, base=ROOT)
+    if path:
+        return resolve_template_path(path, config, base=ROOT)
+
+    path_executable = shutil.which("DelphesHepMC3")
+    if path_executable:
+        return Path(path_executable).resolve().parent
+
+    raise RuntimeError(
+        "Could not determine Delphes directory. Run `source setup_env.sh`, "
+        "set DELPHES_DIR, or define paths.delphes-dir in config.yaml."
+    )
 
 
-def configured_card(config, card_arg):
+def config_with_delphes_dir(config, delphes_dir):
+    merged = dict(config)
+    merged["paths"] = dict(config.get("paths", {}))
+    merged["paths"].setdefault("delphes-dir", str(delphes_dir))
+    return merged
+
+
+def configured_card(config, delphes_dir, card_arg):
+    config = config_with_delphes_dir(config, delphes_dir)
     if card_arg:
         return resolve_template_path(card_arg, config, base=ROOT)
     card = config.get("sim", {}).get("delphes-card")
@@ -77,29 +119,86 @@ def configured_card(config, card_arg):
     return resolve_template_path(card, config, base=ROOT)
 
 
-def delphes_executable(delphes_dir):
-    executable = delphes_dir / "DelphesHepMC3"
-    if executable.exists():
-        return executable
-
-    path_executable = shutil.which("DelphesHepMC3")
-    if path_executable:
-        return Path(path_executable)
-
-    raise RuntimeError(
-        f"Could not find DelphesHepMC3 at {executable} or on PATH. "
-        "Run source setup_env.sh first or update paths.delphes-dir in config.yaml."
-    )
+def binary_path(root):
+    build_dir = Path(os.environ.get("TMPDIR", "/tmp")) / f"higgs_cep_delphes_{os.environ.get('USER', 'user')}"
+    return build_dir / "DelphesDepMC3"
 
 
-def build_command(executable, card, output_file, input_file):
-    return [str(executable), str(card), str(output_file), str(input_file)]
+def root_config(flag):
+    try:
+        output = subprocess.check_output(["root-config", flag], text=True)
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError("root-config not available; run `source setup_env.sh` first") from exc
+    return shlex.split(output.strip())
+
+
+def build_binary(root, delphes_dir):
+    binary = binary_path(root)
+    src = root / "sim" / "scripts" / "DelphesDepMC3.cpp"
+    lib = delphes_dir / "libDelphes.so"
+    if not lib.is_file():
+        raise RuntimeError(f"Delphes library does not exist: {lib}")
+    if binary.exists() and binary.stat().st_mtime >= src.stat().st_mtime:
+        return binary
+
+    binary.parent.mkdir(parents=True, exist_ok=True)
+    command = [
+        "g++", "-std=c++17", "-O2", "-Wall", "-Wextra", str(src),
+        f"-I{delphes_dir}", f"-I{delphes_dir / 'external'}", f"-I{delphes_dir / 'external' / 'tcl'}",
+        *root_config("--cflags"),
+        f"-L{delphes_dir}", f"-Wl,-rpath,{delphes_dir}",
+        "-lDelphes",
+        *root_config("--libs"),
+        "-o", str(binary),
+    ]
+    subprocess.run(command, check=True)
+    return binary
+
+
+def build_command(binary, card, output_dir, input_files):
+    return [str(binary), str(card), str(output_dir), *[str(path) for path in input_files]]
+
+
+def sourced_files(card):
+    pattern = re.compile(r"^\s*source\s+['\"]?([^'\"\s]+)")
+    names = []
+    for line in card.read_text(encoding="utf-8").splitlines():
+        match = pattern.match(line)
+        if match:
+            names.append(match.group(1))
+    return names
+
+
+@contextlib.contextmanager
+def runtime_card(card, delphes_dir):
+    missing = [name for name in sourced_files(card) if not (card.parent / name).exists()]
+    if not missing:
+        yield card
+        return
+
+    include_dirs = [
+        delphes_dir / "cards" / "CMS_PhaseII",
+        delphes_dir / "cards",
+    ]
+    with tempfile.TemporaryDirectory(prefix="higgs_cep_delphes_card_") as tmpdir:
+        tmpdir = Path(tmpdir)
+        staged_card = tmpdir / card.name
+        shutil.copy2(card, staged_card)
+        for name in sorted(set(missing)):
+            source = next((directory / name for directory in include_dirs if (directory / name).is_file()), None)
+            if source is None:
+                raise RuntimeError(
+                    f"Card {card} sources {name}, but it was not found beside the card "
+                    f"or under {', '.join(str(path) for path in include_dirs)}"
+                )
+            (tmpdir / name).symlink_to(source)
+        yield staged_card
 
 
 def run_delphes(command, delphes_dir):
     lcg_view = Path(os.environ.get(
         "DELPHES_LCG_VIEW",
-        "/cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc12-opt/setup.sh",
+        os.environ.get("LCG_VIEW", "/cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc12-opt/setup.sh"),
     ))
     if not lcg_view.is_file():
         raise RuntimeError(f"Delphes LCG view setup script does not exist: {lcg_view}")
@@ -114,45 +213,86 @@ def run_delphes(command, delphes_dir):
     subprocess.run(["bash", "-lc", script], cwd=delphes_dir, check=True)
 
 
+def metadata_text(process_name, campaign_name, pythia_tag, delphes_tag, pythia_dir, card):
+    return "\n".join(
+        [
+            f"process: {process_name}",
+            f"campaign: {campaign_name}",
+            f"pythia_tag: {pythia_tag}",
+            f"delphes_tag: {delphes_tag}",
+            f"pythia_dir: {pythia_dir}",
+            f"delphes_card: {card}",
+            "",
+        ]
+    )
+
+
+def write_metadata(output_dir, process_name, campaign_name, pythia_tag, delphes_tag, pythia_dir, card):
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "metadata.yaml").write_text(
+        metadata_text(process_name, campaign_name, pythia_tag, delphes_tag, pythia_dir, card),
+        encoding="utf-8",
+    )
+
+
 def main():
     args = parse_args()
     root = ROOT
     config = load_yaml(root / "config.yaml")
     processes = load_yaml(root / "processes.yaml")
     delphes_dir = configured_delphes_dir(config)
-    card = configured_card(config, args.card)
-    executable = delphes_executable(delphes_dir)
+    card = configured_card(config, delphes_dir, args.card)
+    binary = binary_path(root) if args.dry_run else build_binary(root, delphes_dir)
 
-    if not executable.is_file():
-        raise RuntimeError(f"Delphes executable is not a file: {executable}")
-    if not executable.exists():
-        raise RuntimeError(f"Delphes executable does not exist: {executable}")
-    if not os.access(executable, os.X_OK):
-        raise RuntimeError(f"Delphes executable is not executable: {executable}")
+    if not args.dry_run and not os.access(binary, os.X_OK):
+        raise RuntimeError(f"Delphes runner is not executable: {binary}")
     if not card.is_file():
         raise RuntimeError(f"Delphes card does not exist: {card}")
 
-    for process_name in selected_processes(processes, args.processes):
-        campaign_dir, campaign = resolve_process_campaign(process_name, args.campaign)
-        input_file = campaign_dir / "GEN-pythia" / f"{process_name}_{campaign}.hepmc"
-        output_dir = campaign_dir / "SIM-delphes"
-        output_file = output_dir / f"{process_name}_{campaign}.root"
+    card_context = contextlib.nullcontext(card) if args.dry_run else runtime_card(card, delphes_dir)
+    with card_context as card_for_run:
+        for process_name in selected_processes(processes, args.processes):
+            campaign_name, _ = campaign_config(process_name, args.campaign, require_known=False)
+            pythia_tag = args.pythia_tag or pythia_campaign(process_name, campaign_name)
+            delphes_tag = args.tag or campaign_name
+            input_dir = pythia_root(process_name, campaign_name, tag=pythia_tag)
+            input_files = discover_hepmc_files(input_dir, max_files=args.max_files)
+            output_dir = delphes_root(process_name, campaign_name, tag=delphes_tag)
+            pending_inputs = []
 
-        if not input_file.is_file():
-            raise RuntimeError(f"Missing Pythia HepMC input for {process_name}: {input_file}")
-        if output_file.exists() and not args.overwrite:
-            print(f"Skipping existing output: {output_file}")
-            continue
+            if not args.dry_run:
+                write_metadata(
+                    output_dir,
+                    process_name,
+                    campaign_name,
+                    pythia_tag,
+                    delphes_tag,
+                    input_dir,
+                    card,
+                )
 
-        command = build_command(executable, card, output_file, input_file)
-        print(" ".join(command), flush=True)
-        if args.dry_run:
-            continue
+            for input_file in input_files:
+                output_file = output_dir / f"{input_file.stem}.root"
+                if output_file.exists() and not args.overwrite:
+                    print(f"Skipping existing output: {output_file}")
+                    continue
+                pending_inputs.append(input_file)
 
-        output_dir.mkdir(parents=True, exist_ok=True)
-        if output_file.exists():
-            output_file.unlink()
-        run_delphes(command, delphes_dir)
+            if not pending_inputs:
+                continue
+
+            command = build_command(binary, card_for_run, output_dir, pending_inputs)
+            print(" ".join(command), flush=True)
+            if args.dry_run:
+                continue
+
+            output_dir.mkdir(parents=True, exist_ok=True)
+            if args.overwrite:
+                for input_file in pending_inputs:
+                    output_file = output_dir / f"{input_file.stem}.root"
+                    if output_file.exists():
+                        output_file.unlink()
+            run_delphes(command, delphes_dir)
 
 
 if __name__ == "__main__":

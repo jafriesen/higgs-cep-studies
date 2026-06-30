@@ -13,8 +13,8 @@ Background generation is split into two pieces:
 - `scripts/build_minbias_pairs.py` - `.npz -> ProtonPairs` converter.
 - `scripts/analyze_minbias_protons.py` - station-level acceptance/rate summaries.
 - `scripts/quick_check_minbias.py` - quick quantile sanity plots.
-- `scripts/run_superchic_pythia.sh` - hadronize SuperChic LHE/evrec files with Pythia8 and write HepMC3.
-- `scripts/run_processes_pythia.py` - run Pythia for SuperChic campaigns listed in `processes.yaml`.
+- `scripts/process_superchic.cc` - hadronize SuperChic LHE/evrec files with Pythia8 and write HepMC3.
+- `scripts/process_superchic.py` - run Pythia for SuperChic campaigns listed in `processes.yaml` (compiles `process_superchic.cc` as needed).
 
 ## Setup
 
@@ -52,19 +52,16 @@ Outputs:
 ## Run SuperChic events through Pythia8
 
 ```bash
-./scripts/run_superchic_pythia.sh \
-  --input ../generation-superchic/output/h_cc/superchic_h_cc_nev100000_j100_20260618_102604/evrecs \
-  --output /tmp/h_cc_pythia.hepmc \
-  --max-events 100
+./scripts/process_superchic.py --process Hcc --campaign Hcc__v01 --max-events 100
 ```
 
-The script reads SuperChic LHE-style `evrec*.dat` files, disables Pythia beam remnants for CEP events with intact outgoing protons, keeps final-state showering and hadronization on, and writes HepMC3 ASCII output for Delphes.
+`process_superchic.cc` reads SuperChic LHE-style `evrec*.dat` files, disables Pythia beam remnants for CEP events with intact outgoing protons, keeps final-state showering and hadronization on, and writes HepMC3 ASCII output for Delphes. `process_superchic.py` discovers the input files, compiles `process_superchic.cc` against the LCG view's Pythia8/HepMC3 as needed, and invokes it.
 
-To run every process default campaign from `processes.yaml` and write into each campaign directory:
+To run every process default campaign from `processes.yaml`:
 
 ```bash
-./scripts/run_processes_pythia.py --max-events 100
+./scripts/process_superchic.py --max-events 100
 ```
 
-Outputs are written to `<superchic campaign>/GEN-pythia/<process>_<campaign>.hepmc`.
+Outputs are written to `<campaign>/Pythia/<tag>/<process>_<tag>.hepmc`, where `<tag>` defaults to the campaign name (override with `--tag`).
 If a process entry in `processes.yaml` defines `max_files`, that file limit is used unless `--max-files` is passed.
