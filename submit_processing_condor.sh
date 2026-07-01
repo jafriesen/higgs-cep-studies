@@ -245,7 +245,6 @@ set -euo pipefail
 PROCESS="\${1:?missing PROCESS}"
 
 cd $(printf '%q' "$STUDY_DIR")
-source setup_env.sh
 if command -v cmsenv >/dev/null 2>&1; then
   cmsenv
 fi
@@ -258,6 +257,7 @@ EOF
 
 if [[ "$RUN_PYTHIA" == true ]]; then
   cat >> "$JOB_SCRIPT" <<EOF
+source env/setup_pythia.sh
 PYTHIA_CMD=(python3 generation-pythia/scripts/process_superchic.py --process "\$PROCESS" $PYTHIA_ARGS_QUOTED)
 echo "\${PYTHIA_CMD[*]}"
 "\${PYTHIA_CMD[@]}"
@@ -267,6 +267,7 @@ fi
 
 if [[ "$RUN_DELPHES" == true ]]; then
   cat >> "$JOB_SCRIPT" <<EOF
+source env/setup_delphes.sh
 DELPHES_CMD=(python3 sim/scripts/run_processes_delphes.py --process "\$PROCESS" $DELPHES_ARGS_QUOTED)
 echo "\${DELPHES_CMD[*]}"
 "\${DELPHES_CMD[@]}"

@@ -1,6 +1,15 @@
 paths:
   output_dir: output/
   minbias-output: "{output_dir}/minbias"
+generation:
+  superchic:
+    processes: processes-superchic.yaml
+    output_dir: output-superchic/
+    generation_dir: gen-SuperChic
+  fpmc:
+    processes: processes-fpmc.yaml
+    output_dir: output-fpmc/
+    generation_dir: gen-FPMC
 minbias:
   default_campaign: minbias__test
 sim:

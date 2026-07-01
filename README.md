@@ -57,18 +57,25 @@ cd CMSSW_15_0_0/src/higgs-cep-studies
 source setup_env.sh
 ```
 
-`setup_env.sh` exports:
-- `HIGGS_SIGNAL_DIR`
-- `HIGGS_BKG_DIR`
-- `HIGGS_ANALYSIS_DIR`
-- `SUPERCHIC_DIR`
-- `LHAPDF_DATA_PATH` (including SuperChic `SF/` grids required by `init`)
+`setup_env.sh` remains the interactive setup for the modern SuperChic,
+Pythia, Delphes, and analysis environment. Individual runners use the narrower
+tool setup scripts under `env/`.
+
+FPMC uses an incompatible legacy GCC runtime and must be loaded separately in
+a fresh shell:
+
+```bash
+source env/setup_fpmc.sh
+```
+
+The FPMC runner isolates this environment automatically. See
+`generation-fpmc/README.md` for configuration and campaign examples.
 
 ## 4) Typical workflow
 
-1. Generate signal in `signal-generation`.
-2. Generate background in `bkg-generation`.
-3. Run scans/plots in `analysis`.
+1. Generate events with SuperChic or FPMC.
+2. Process events with Pythia and Delphes as required.
+3. Run scans and plots in `analysis`.
 
 ## 5) Minimal command examples
 

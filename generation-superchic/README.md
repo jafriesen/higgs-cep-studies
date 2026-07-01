@@ -1,47 +1,56 @@
-# signal-generation
+# SuperChic generation
 
-Signal-generation instructions using an **external** SuperChic checkout.
+SuperChic processes and campaigns are defined in `processes-superchic.yaml`.
+All processes use `cards/template.DAT`; the run scripts replace `[intag]`,
+`[proc]`, `[outtg]`, `[iseed]`, and `[nev]` from the process configuration and
+runtime arguments.
 
-## Contents
+Generation outputs use:
 
-- `scripts/run_superchic_signal.sh` - runs one SuperChic job (`h_bb` or `qcd_bb`) using local templates by default.
-- `templates/` - default card templates (`h_bb_template.DAT`, `qcd_bb_template.DAT`).
-- `output/` - produced files, grouped by process/tag.
-- `logs/` - per-job logs.
-
-## Setup
-
-```bash
-cd /home/mstamenk/superchic/CMSSW_15_0_0/src/higgs-cep-studies
-source setup_env.sh
+```text
+output-superchic/<process>/<campaign>/gen-SuperChic/
+├── cards/
+├── condor/
+├── evrecs/
+├── init/
+├── logs/
+├── output/
+└── metadata.yaml
 ```
 
-## Run `h_bb` signal
+## Initialize and run locally
 
 ```bash
-cd signal-generation/scripts
-./run_superchic_signal.sh --process h_bb --nev 10000 --seed 1001 --out-tag hbb_001 1
+generation-superchic/scripts/run_superchic.sh \
+  --process Hbb \
+  --campaign Hbb__v01 \
+  --nev 1000 \
+  --seed 1001 \
+  --init
 ```
 
-Default card for `h_bb`:
-- `signal-generation/templates/h_bb_template.DAT`
-- fallback: `${SUPERCHIC_DIR}/bin/h_bb/h_bb.DAT`, then `${SUPERCHIC_DIR}/Cards/h_bb.DAT`
+Campaign names are required but may be absent from the configuration.
+`--card FILE` selects another complete SuperChic card as the template; the
+same five tagged fields are still replaced. Initialization is reused when its
+energy, survival model, input tag, PDF name, and PDF member match.
 
-The wrapper patches these entries in a temporary card copy:
-- `[outtg]`
-- `[iseed]`
-- `[nev]`
+With `--job N`, the default seed is `1001 + N - 1`.
 
-The wrapper also runs `init` automatically when needed (for the card's
-`[rts]`, `[isurv]`, `[intag]`, `[PDFname]`, `[PDFmember]` combination) and
-caches the generated `inputs/` files under:
-- `signal-generation/workspace/init_cache/`
-
-Output location:
-- `signal-generation/output/h_bb/<out-tag>/`
-
-## Optional: custom card
+## Submit to Condor
 
 ```bash
-./run_superchic_signal.sh --process h_bb --card /path/to/my_card.DAT --out-tag test 1
+generation-superchic/scripts/submit_superchic_condor.sh \
+  --process Hbb \
+  --campaign Hbb__v01 \
+  --jobs 100 \
+  --nev-per-job 2000 \
+  --init
 ```
+
+Defaults are 100 jobs, 2000 events per job, 2048 MB, one CPU, and at most 50
+idle jobs. Workers run from Condor scratch using the shared repository,
+SuperChic installation, and initialized inputs, so `/isilon` and CVMFS must
+be available on worker nodes. `--card FILE` is also supported for batch jobs.
+`--dry-run` builds the worker and Condor files without submitting.
+`--overwrite` clears non-initialization generation outputs and preserves
+initialized inputs.

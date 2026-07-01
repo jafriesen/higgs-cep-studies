@@ -1,0 +1,87 @@
+Hbb:
+  process_code: 1
+  intag: in140_Hbb
+  jet_type: b
+  xsec_fb: 5.9
+  weight: 1.0
+  default_campaign:
+    main: Hbb__test
+  campaigns:
+    Hbb__test: {}
+
+Hcc:
+  process_code: 85
+  intag: in140_Hcc
+  jet_type: c
+  xsec_fb: 0.29
+  weight: 1.0
+  default_campaign:
+    main: Hcc__test
+  campaigns:
+    Hcc__test: {}
+
+QCDbb:
+  process_code: 6
+  intag: in140_QCDbb
+  jet_type: b
+  xsec_fb: 1650
+  weight: 1.0
+  default_campaign:
+    main: QCDbb__test
+  campaigns:
+    QCDbb__test: {}
+
+QCDcc:
+  process_code: 5
+  intag: in140_QCDcc
+  jet_type: c
+  xsec_fb: 337
+  weight: 1.0
+  default_campaign:
+    main: QCDcc__test
+  campaigns:
+    QCDcc__test: {}
+
+QEDbb:
+  process_code: 63
+  intag: in140_QEDbb
+  jet_type: b
+  xsec_fb: 2.85
+  weight: 1.0
+  default_campaign:
+    main: QEDbb__test
+  campaigns:
+    QEDbb__test: {}
+
+QEDcc:
+  process_code: 62
+  intag: in140_QEDcc
+  jet_type: c
+  xsec_fb: 48.9
+  weight: 1.0
+  default_campaign:
+    main: QEDcc__test
+  campaigns:
+    QEDcc__test: {}
+
+QCDqq:
+  process_code: 4
+  intag: in140_QCDqq
+  jet_type: q
+  xsec_fb: 93
+  weight: 1.0
+  default_campaign:
+    main: QCDqq__test
+  campaigns:
+    QCDqq__test: {}
+
+QCDgg:
+  process_code: 3
+  intag: in140_QCDgg
+  jet_type: g
+  xsec_fb: 10326000
+  weight: 1.0
+  default_campaign:
+    main: QCDgg__test
+  campaigns:
+    QCDgg__test: {}

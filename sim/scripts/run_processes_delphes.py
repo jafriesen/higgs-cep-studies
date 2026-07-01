@@ -97,7 +97,7 @@ def configured_delphes_dir(config):
         return Path(path_executable).resolve().parent
 
     raise RuntimeError(
-        "Could not determine Delphes directory. Run `source setup_env.sh`, "
+        "Could not determine Delphes directory. Run `source env/setup_delphes.sh`, "
         "set DELPHES_DIR, or define paths.delphes-dir in config.yaml."
     )
 
@@ -128,7 +128,9 @@ def root_config(flag):
     try:
         output = subprocess.check_output(["root-config", flag], text=True)
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
-        raise RuntimeError("root-config not available; run `source setup_env.sh` first") from exc
+        raise RuntimeError(
+            "root-config not available; run `source env/setup_delphes.sh` first"
+        ) from exc
     return shlex.split(output.strip())
 
 

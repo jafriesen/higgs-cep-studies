@@ -77,7 +77,9 @@ def build_binary(root):
     pythia8 = os.environ.get("PYTHIA8")
     lcg_view = os.environ.get("LCG_VIEW")
     if not pythia8 or not lcg_view:
-        raise RuntimeError("$PYTHIA8/$LCG_VIEW not set; run `source setup_env.sh` first")
+        raise RuntimeError(
+            "$PYTHIA8/$LCG_VIEW not set; run `source env/setup_pythia.sh` first"
+        )
     view_root = lcg_view.rsplit("/setup.sh", 1)[0]
 
     binary.parent.mkdir(parents=True, exist_ok=True)

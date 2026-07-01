@@ -16,7 +16,7 @@ USAGE
 RUN_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STUDY_DIR="$(cd "$RUN_SCRIPT_DIR/../.." && pwd)"
 
-source "$STUDY_DIR/setup_env.sh"
+source "$STUDY_DIR/env/setup_pythia.sh"
 
 unset PYTHIA8DATA
 

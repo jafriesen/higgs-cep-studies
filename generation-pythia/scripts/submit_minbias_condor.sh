@@ -97,7 +97,7 @@ if [[ ! -f "$GEN_SCRIPT" ]]; then
   exit 1
 fi
 
-source "$STUDY_DIR/setup_env.sh"
+source "$STUDY_DIR/env/setup_pythia.sh"
 
 if [[ -n "$OUTPUT_DIR" ]]; then
   if [[ "$OUTPUT_DIR" != /* ]]; then
@@ -191,7 +191,7 @@ echo "Events: \$EVENTS"
 echo "Seed: \${SEED:-<generator default>}"
 
 cd "\$STUDY_DIR"
-source setup_env.sh
+source env/setup_pythia.sh
 
 python3 -c "import pythia8mc, pyarrow"
 

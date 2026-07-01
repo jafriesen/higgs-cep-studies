@@ -33,8 +33,8 @@ echo "+ cd $RUN_SCRIPT_DIR"
 cd "$RUN_SCRIPT_DIR"
 
 export HIGGS_CEP_SETUP_STRICT=1
-echo "+ source $STUDY_DIR/setup_env.sh"
-source "$STUDY_DIR/setup_env.sh"
+echo "+ source $STUDY_DIR/env/setup_pythia.sh"
+source "$STUDY_DIR/env/setup_pythia.sh"
 
 if ! run_cmd python3 -c "import pythia8mc" >/dev/null 2>&1; then
   echo "ERROR: Python module 'pythia8mc' is not available after environment setup." >&2

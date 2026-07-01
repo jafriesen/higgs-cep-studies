@@ -53,6 +53,75 @@ def campaign_config(process, campaign=None, require_known=True):
     return campaign_name, campaigns[campaign_name] or {}
 
 
+def generation_config(generator):
+    config = _config()
+    generators = config.get("generation") or {}
+    if generator not in generators:
+        known = ", ".join(sorted(generators))
+        raise RuntimeError(
+            f"Unknown generator '{generator}'. Configured generators: {known}"
+        )
+    generator_cfg = generators[generator] or {}
+    required = ("processes", "output_dir", "generation_dir")
+    missing = [name for name in required if not generator_cfg.get(name)]
+    if missing:
+        raise RuntimeError(
+            f"Generator '{generator}' is missing config fields: {', '.join(missing)}"
+        )
+    return generator_cfg
+
+
+def generation_processes(generator):
+    cfg = generation_config(generator)
+    return load_yaml(resolve_path(cfg["processes"], base=repo_root()))
+
+
+def generation_process_config(generator, process):
+    processes = generation_processes(generator)
+    if process not in processes:
+        known = ", ".join(sorted(processes))
+        raise RuntimeError(
+            f"Unknown {generator} process '{process}'. Known processes: {known}"
+        )
+    return processes[process] or {}
+
+
+def generation_campaign_config(generator, process, campaign=None):
+    process_cfg = generation_process_config(generator, process)
+    campaign_name = campaign
+    if campaign_name is None:
+        default = process_cfg.get("default_campaign")
+        campaign_name = default.get("main") if isinstance(default, dict) else default
+    if not campaign_name:
+        raise RuntimeError(
+            f"A campaign is required for {generator} process '{process}'"
+        )
+    campaigns = process_cfg.get("campaigns") or {}
+    return campaign_name, campaigns.get(campaign_name) or {}
+
+
+def generation_env(generator, process, campaign):
+    generator_cfg = generation_config(generator)
+    campaign_name, _ = generation_campaign_config(generator, process, campaign)
+    output_root = resolve_template_path(
+        generator_cfg["output_dir"], _config(), base=repo_root()
+    )
+    campaign_root_path = output_root / process / campaign_name
+    generation_root_path = campaign_root_path / generator_cfg["generation_dir"]
+    return {
+        "GENERATOR": generator,
+        "PROCESS": process,
+        "CAMPAIGN": campaign_name,
+        "CAMPAIGN_ROOT": campaign_root_path,
+        "GENERATION_ROOT": generation_root_path,
+        "CARDS_DIR": generation_root_path / "cards",
+        "CONDOR_DIR": generation_root_path / "condor",
+        "EVENT_RECORDS_DIR": generation_root_path / "evrecs",
+        "LOGS_DIR": generation_root_path / "logs",
+        "METADATA_FILE": generation_root_path / "metadata.yaml",
+    }
+
+
 def _override_path(campaign_cfg, key):
     path = (campaign_cfg.get("paths") or {}).get(key)
     if not path:
@@ -163,10 +232,17 @@ def main():
     parser = argparse.ArgumentParser(description="Resolve campaign output paths.")
     parser.add_argument(
         "target",
-        choices=sorted([*_path_commands(), "superchic-env"]),
+        choices=sorted([*_path_commands(), "generation-env", "superchic-env"]),
         help="Path or shell-assignment group to print.",
     )
-    parser.add_argument("--process", required=True, help="Process name from processes.yaml.")
+    parser.add_argument(
+        "--generator",
+        default=None,
+        help="Generator name for generation-env.",
+    )
+    parser.add_argument(
+        "--process", required=True, help="Process name from the applicable process config."
+    )
     parser.add_argument(
         "--campaign",
         default=None,
@@ -178,6 +254,18 @@ def main():
         help="Override the process output directory; campaign is placed under this path.",
     )
     args = parser.parse_args()
+
+    if args.target == "generation-env":
+        if not args.generator:
+            parser.error("--generator is required for generation-env")
+        if not args.campaign:
+            parser.error("--campaign is required for generation-env")
+        if args.output_dir:
+            parser.error("--output-dir is not supported for generation-env")
+        _print_shell_assignments(
+            generation_env(args.generator, args.process, args.campaign)
+        )
+        return
 
     if args.target == "superchic-env":
         _print_shell_assignments(

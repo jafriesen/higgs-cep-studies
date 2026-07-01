@@ -20,7 +20,7 @@ Background generation is split into two pieces:
 
 ```bash
 cd /home/mstamenk/superchic/CMSSW_15_0_0/src/higgs-cep-studies
-source setup_env.sh
+source env/setup_pythia.sh
 ```
 
 ## Run SuperChic QCD background

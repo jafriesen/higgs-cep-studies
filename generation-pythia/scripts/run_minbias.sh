@@ -25,7 +25,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   exit 0
 fi
 
-source "$STUDY_DIR/setup_env.sh"
+source "$STUDY_DIR/env/setup_pythia.sh"
 
 tool_value() {
   local tool="$1"

@@ -1,0 +1,91 @@
+Hbb:
+  process_code: 19905
+  typint: QCD
+  jet_type: b
+  yjmin: -6.0
+  yjmax: 6.0
+  ptmin: 4.0
+  hmass: 125.0
+  default_campaign:
+    main: Hbb__test
+  campaigns:
+    Hbb__test:
+      hadronize: true
+    Hbb_parton:
+      hadronize: false
+
+Hcc:
+  process_code: 19904
+  typint: QCD
+  jet_type: c
+  yjmin: -6.0
+  yjmax: 6.0
+  ptmin: 4.0
+  hmass: 125.0
+  default_campaign:
+    main: Hcc__test
+  campaigns:
+    Hcc__test:
+      hadronize: true
+    Hcc_parton:
+      hadronize: false
+
+QCDbb:
+  process_code: 16005
+  typint: QCD
+  jet_type: b
+  yjmin: -6.0
+  yjmax: 6.0
+  ptmin: 4.0
+  default_campaign:
+    main: QCDbb__test
+  campaigns:
+    QCDbb__test:
+      hadronize: true
+    QCDbb_parton:
+      hadronize: false
+
+QCDcc:
+  process_code: 16004
+  typint: QCD
+  jet_type: c
+  yjmin: -6.0
+  yjmax: 6.0
+  ptmin: 4.0
+  default_campaign:
+    main: QCDcc__test
+  campaigns:
+    QCDcc__test:
+      hadronize: true
+    QCDcc_parton:
+      hadronize: false
+
+QEDbb:
+  process_code: 16005
+  typint: QED
+  jet_type: b
+  yjmin: -6.0
+  yjmax: 6.0
+  ptmin: 4.0
+  default_campaign:
+    main: QEDbb__test
+  campaigns:
+    QEDbb__test:
+      hadronize: true
+    QEDbb_parton:
+      hadronize: false
+
+QEDcc:
+  process_code: 16004
+  typint: QED
+  jet_type: c
+  yjmin: -6.0
+  yjmax: 6.0
+  ptmin: 4.0
+  default_campaign:
+    main: QEDcc__test
+  campaigns:
+    QEDcc__test:
+      hadronize: true
+    QEDcc_parton:
+      hadronize: false
