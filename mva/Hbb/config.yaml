@@ -1,0 +1,319 @@
+channel: Hbb
+signal_class: Hbb
+target_flavor: bb
+luminosity_fb: 3000.0
+pileup_mu: 200.0
+mass_window_gev: [117.0, 133.0]
+max_abs_rapidity_difference: 0.2
+pps_config: analysis/scripts/new/config.yaml
+minbias_path: output/minbias/minbias_inelastic_100m_v1/protons.parquet
+parameters: parameters.yaml
+feature_sets:
+  # Permutation-ranked top twenty (analysis/MVA/output/mva_bb_multiclass_protons/
+  # feature_count_v1): 20 features give Z 1.1902 +/- 0.0063 against 1.2007 +/- 0.0373
+  # for 42, so the larger set is not resolved as better. Fifteen is worse.
+  locked:
+    - delta_phi_jj
+    - yx_minus_dijet_rapidity
+    - dijet_mass
+    - pt_asymmetry
+    - interjet_bridge_asymmetry_projected
+    - delta_eta_jj
+    - n_tracks_interjet
+    - sum_track_pt_outer_negative
+    - jet_multiplicity
+    - jet1_eta
+    - jet2_pull_magnitude
+    - n_vertices
+    - n_tracks_outer_positive
+    - interjet_bridge_asymmetry
+    - jet1_charged_fraction
+    - dijet_rapidity
+    - n_outer_track_jets
+    - sum_track_pt_outside_pt2
+    - minimum_gap_size
+    - n_tracks_projected_bridge
+  # Broader candidate set for the recovered-FSR study.
+  new_list:
+    - jet1_pt
+    - jet2_pt
+    - jet1_pt_over_mjj
+    - jet2_pt_over_mjj
+    - jet1_eta
+    - jet2_eta
+    - delta_eta_jj
+    - delta_phi_jj
+    - dijet_pt
+    - dijet_rapidity
+    - dijet_mass
+    - jet_multiplicity
+    - pt_asymmetry
+    - jet1_ncharged
+    - jet2_ncharged
+    - n_tracks_outside_jets
+    - sum_track_pt_outside_jets
+    - n_tracks_outside_pt2
+    - sum_track_pt_outside_pt2
+    - max_track_pt_outside_jets
+    - n_tracks_outer_positive
+    - n_tracks_outer_negative
+    - sum_track_pt_outer_positive
+    - sum_track_pt_outer_negative
+    - sum_gap_size
+    - minimum_gap_size
+    - leading_track_jet_fraction
+    - n_extra_track_jets
+    - n_outer_track_jets
+    - leading_outer_track_jet_pt
+    - interjet_bridge_asymmetry_projected
+    - eta_rms_outside
+    - n_vertices
+    - yx_minus_dijet_rapidity
+  # new_list plus the proton-frame leading-jet mass 2 m_T cosh(y_j1 - y_X). Needs a
+  # dataset built after jet1_mt/jet1_rapidity were added (feature set "full").
+  new_list_mass_estimator:
+    - jet1_pt
+    - jet2_pt
+    - jet1_pt_over_mjj
+    - jet2_pt_over_mjj
+    - jet1_eta
+    - jet2_eta
+    - delta_eta_jj
+    - delta_phi_jj
+    - dijet_pt
+    - dijet_rapidity
+    - dijet_mass
+    - jet_multiplicity
+    - pt_asymmetry
+    - jet1_ncharged
+    - jet2_ncharged
+    - n_tracks_outside_jets
+    - sum_track_pt_outside_jets
+    - n_tracks_outside_pt2
+    - sum_track_pt_outside_pt2
+    - max_track_pt_outside_jets
+    - n_tracks_transverse
+    - sum_track_pt_transverse
+    - n_tracks_outer_positive
+    - n_tracks_outer_negative
+    - sum_track_pt_outer_positive
+    - sum_track_pt_outer_negative
+    - sum_gap_size
+    - minimum_gap_size
+    - leading_track_jet_fraction
+    - n_extra_track_jets
+    - n_outer_track_jets
+    - leading_outer_track_jet_pt
+    - interjet_bridge_asymmetry_projected
+    - eta_rms_outside
+    - n_vertices
+    - yx_minus_dijet_rapidity
+    - jet1_mass_estimator
+    # Track-based pull is populated independently of the Delphes jet-shape
+    # branches, which are zero in the current production.
+    - jet1_pull_magnitude
+    - jet2_pull_magnitude
+  # The 48 used by significance_v3_all_campaigns; kept for the parity control.
+  legacy_locked:
+    - jet1_pt_over_mjj
+    - jet2_pt_over_mjj
+    - jet1_eta
+    - jet2_eta
+    - delta_eta_jj
+    - delta_phi_jj
+    - dijet_pt
+    - dijet_rapidity
+    - dijet_mass
+    - dijet_mass_fsr
+    - fsr_recovered_pt
+    - jet_multiplicity
+    - cos_theta_star
+    - pt_asymmetry
+    - jet1_ncharged
+    - jet2_ncharged
+    - jet1_charged_fraction
+    - jet2_charged_fraction
+    - jet1_pull_magnitude
+    - jet2_pull_magnitude
+    - n_tracks_outside_jets
+    - sum_track_pt_outside_jets
+    - n_tracks_outside_pt2
+    - sum_track_pt_outside_pt2
+    - max_track_pt_outside_jets
+    - n_tracks_projected_bridge
+    - sum_track_pt_projected_bridge
+    - n_tracks_projected_side
+    - sum_track_pt_projected_side
+    - n_tracks_outer_positive
+    - n_tracks_outer_negative
+    - sum_track_pt_outer_positive
+    - sum_track_pt_outer_negative
+    - sum_gap_size
+    - minimum_gap_size
+    - track_clumping_fraction
+    - leading_track_jet_fraction
+    - n_extra_track_jets
+    - n_outer_track_jets
+    - leading_outer_track_jet_pt
+    - interjet_bridge_asymmetry_projected
+    - eta_rms_outside
+    - n_soft_leptons_in_jets
+    - max_in_jet_lepton_pt
+    - puppi_met
+    - met_min_dphi_jet
+    - n_vertices
+    - yx_minus_dijet_rapidity
+components:
+  - name: Hbb
+    generator: superchic
+    process: Hbb
+    source_flavor: bb
+    signal: true
+    survival_scaled: true
+    real_protons: true
+    sim_subcampaign: Hbb_noFSR_200PU__v01
+    pythia_subcampaign: Hbb_noFSR__v01
+    fsr_state: noFSR
+    source_sample: Hbb
+    correction_map: jet-energy/output/stage2_3/corrections.yaml
+  - name: QCDbb
+    generator: superchic
+    process: QCDbb
+    source_flavor: bb
+    signal: false
+    survival_scaled: true
+    real_protons: true
+    sim_subcampaign: QCDbb_noFSR_200PU__v01
+    pythia_subcampaign: QCDbb_noFSR__v01
+    fsr_state: noFSR
+    source_sample: QCDbb_superchic
+    correction_map: jet-energy/output/stage2_3_mva/corrections.yaml
+  - name: QCDbb_madgraph
+    generator: madgraph
+    process: QCDbb
+    source_flavor: bb
+    signal: false
+    survival_scaled: false
+    real_protons: false
+    campaigns: [QCDbb__v01, QCDbb__v02, QCDbb__v03]
+    campaign_combination: stitch
+    fsr_state: noFSR
+    source_sample: QCDbb
+    correction_map: jet-energy/output/stage2_3/corrections.yaml
+  # FSR on, trimmed+MTD card, FSR-recovered jets calibrated to the recovered GenJet
+  # pair. One map PER SAMPLE: a shared per-flavour map overcorrected the inclusive
+  # MadGraph backgrounds by 7-11% (busy events keep more residual pileup/UE after
+  # PUPPI), while per-sample maps close to ~1% in truth-pT bins on held-out files.
+  - name: Hbb_fsr
+    generator: superchic
+    process: Hbb
+    source_flavor: bb
+    signal: true
+    survival_scaled: true
+    real_protons: true
+    sim_subcampaign: Hbb_DPy8_FSR_200PU_MTD__v01
+    fsr_state: FSR
+    source_sample: Hbb
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  - name: QCDbb_fsr
+    generator: superchic
+    process: QCDbb
+    source_flavor: bb
+    signal: false
+    survival_scaled: true
+    real_protons: true
+    sim_subcampaign: QCDbb_DPy8_FSR_200PU_MTD__v01
+    fsr_state: FSR
+    source_sample: QCDbb_superchic
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  - name: QEDbb_fsr
+    generator: superchic
+    process: QEDbb
+    source_flavor: bb
+    signal: false
+    survival_scaled: true
+    real_protons: true
+    sim_subcampaign: QEDbb_DPy8_FSR_200PU_MTD__v01
+    fsr_state: FSR
+    source_sample: QEDbb
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  - name: QCDgg_fsr
+    generator: superchic
+    process: QCDgg
+    campaign: QCDgg__v04
+    max_files: 700
+    source_flavor: light
+    truth_pid_abs: 21
+    signal: false
+    survival_scaled: true
+    real_protons: true
+    sim_subcampaign: QCDgg_DPy8_FSR_200PU_MTD__v04
+    fsr_state: FSR
+    source_sample: QCDgg
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  # Disjoint slices replace the stitched v01-v03: no overlap weights, so each slice's
+  # statistics can be set independently. Each slice has its own correction map.
+  - name: QCDbb_madgraph_fsr
+    generator: madgraph
+    process: QCDbb
+    source_flavor: bb
+    signal: false
+    survival_scaled: false
+    real_protons: false
+    campaigns: [QCDbb__v04, QCDbb__v05, QCDbb__v06, QCDbb__v07, QCDbb__v08, QCDbb__v09]
+    campaign_combination: disjoint
+    sim_subcampaign: QCDbb_DPy8_FSR_200PU_MTD__{campaign}
+    fsr_state: FSR
+    source_sample: QCDbb_madgraph_{campaign}
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+
+profiles:
+  parity_three_class:
+    feature_set: legacy_locked
+    components: [Hbb, QCDbb, QCDbb_madgraph]
+    class_map:
+      Hbb: Hbb
+      QCDbb: exclusive_QCDbb
+      QCDbb_madgraph: nonexclusive_QCDbb
+    proton_backend: legacy_pool
+    jets: leading
+    corrections: false
+    max_abs_jet_eta: null
+    track_min_pt_gev: 0.5
+  fsr_mtd_four_class:
+    components: [Hbb_fsr, QCDbb_fsr, QEDbb_fsr, QCDbb_madgraph_fsr]
+    class_map:
+      Hbb_fsr: Hbb
+      QCDbb_fsr: exclusive_QCDbb
+      QEDbb_fsr: exclusive_QEDbb
+      QCDbb_madgraph_fsr: nonexclusive_QCDbb
+    proton_backend: analytic
+    jets: leading
+    corrections: true
+    max_abs_jet_eta: 3.0
+    track_min_pt_gev: 0.5
+  fsr_mtd_five_class_gg:
+    feature_set: new_list_mass_estimator
+    components: [Hbb_fsr, QCDbb_fsr, QCDgg_fsr, QEDbb_fsr, QCDbb_madgraph_fsr]
+    class_map:
+      Hbb_fsr: Hbb
+      QCDbb_fsr: exclusive_QCDbb
+      QCDgg_fsr: exclusive_QCDgg
+      QEDbb_fsr: exclusive_QEDbb
+      QCDbb_madgraph_fsr: nonexclusive_QCDbb
+    proton_backend: analytic
+    jets: leading
+    corrections: true
+    max_abs_jet_eta: 3.0
+    track_min_pt_gev: 0.5
+  nominal_three_class:
+    components: [Hbb, QCDbb, QCDbb_madgraph]
+    class_map:
+      Hbb: Hbb
+      QCDbb: exclusive_QCDbb
+      QCDbb_madgraph: nonexclusive_QCDbb
+    proton_backend: analytic
+    jets: leading
+    corrections: true
+    max_abs_jet_eta: 3.0
+    track_min_pt_gev: 2.0

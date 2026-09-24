@@ -1,0 +1,368 @@
+channel: Hcc
+signal_class: Hcc
+target_flavor: cc
+luminosity_fb: 3000.0
+pileup_mu: 200.0
+mass_window_gev: [117.0, 133.0]
+max_abs_rapidity_difference: 0.2
+pps_config: analysis/scripts/new/config.yaml
+minbias_path: output/minbias/minbias_inelastic_100m_v1/protons.parquet
+parameters: parameters.yaml
+feature_sets:
+  # Match the current H(bb) nominal feature set. The jet-shape PTD/width branches
+  # are intentionally excluded because they are zero in the present production.
+  new_list_mass_estimator:
+    - jet1_pt
+    - jet2_pt
+    - jet1_pt_over_mjj
+    - jet2_pt_over_mjj
+    - jet1_eta
+    - jet2_eta
+    - delta_eta_jj
+    - delta_phi_jj
+    - dijet_pt
+    - dijet_rapidity
+    - dijet_mass
+    - jet_multiplicity
+    - pt_asymmetry
+    - jet1_ncharged
+    - jet2_ncharged
+    - n_tracks_outside_jets
+    - sum_track_pt_outside_jets
+    - n_tracks_outside_pt2
+    - sum_track_pt_outside_pt2
+    - max_track_pt_outside_jets
+    - n_tracks_transverse
+    - sum_track_pt_transverse
+    - n_tracks_outer_positive
+    - n_tracks_outer_negative
+    - sum_track_pt_outer_positive
+    - sum_track_pt_outer_negative
+    - sum_gap_size
+    - minimum_gap_size
+    - leading_track_jet_fraction
+    - n_extra_track_jets
+    - n_outer_track_jets
+    - leading_outer_track_jet_pt
+    - interjet_bridge_asymmetry_projected
+    - eta_rms_outside
+    - n_vertices
+    - yx_minus_dijet_rapidity
+    - jet1_mass_estimator
+    - jet1_pull_magnitude
+    - jet2_pull_magnitude
+  locked:
+    - delta_phi_jj
+    - yx_minus_dijet_rapidity
+    - sum_gap_size
+    - sum_track_pt_outside_jets
+    - dijet_mass
+    - jet2_eta
+    - n_tracks_outside_jets
+    - jet1_eta
+    - dijet_mass_fsr
+    - eta_rms_outside
+    - max_track_pt_outside_jets
+    - sum_track_pt_interjet
+    - sum_track_pt_outside_pt2
+    - pt_asymmetry
+    - jet1_charged_fraction
+    - jet2_pt_over_mjj
+    - jet2_pull_magnitude
+    - dijet_rapidity
+    - delta_eta_jj
+    - jet_multiplicity
+  legacy_locked:
+    - delta_phi_jj
+    - yx_minus_dijet_rapidity
+    - dijet_mass
+    - pt_asymmetry
+    - interjet_bridge_asymmetry_projected
+    - delta_eta_jj
+    - n_tracks_interjet
+    - sum_track_pt_outer_negative
+    - jet_multiplicity
+    - jet1_eta
+    - jet2_pull_magnitude
+    - n_vertices
+    - n_tracks_outer_positive
+    - interjet_bridge_asymmetry
+    - jet1_charged_fraction
+    - dijet_rapidity
+    - n_outer_track_jets
+    - sum_track_pt_outside_pt2
+    - minimum_gap_size
+    - n_tracks_projected_bridge
+
+components:
+  - name: Hcc
+    generator: superchic
+    process: Hcc
+    source_flavor: cc
+    signal: true
+    survival_scaled: true
+    real_protons: true
+    fsr_state: noFSR
+    source_sample: Hcc
+    correction_map: jet-energy/output/stage2_3_mva/corrections.yaml
+  - name: QCDcc_superchic
+    generator: superchic
+    process: QCDcc
+    source_flavor: cc
+    signal: false
+    survival_scaled: true
+    real_protons: true
+    fsr_state: noFSR
+    source_sample: QCDcc_superchic
+    correction_map: jet-energy/output/stage2_3_mva/corrections.yaml
+  - name: QCDbb_superchic
+    generator: superchic
+    process: QCDbb
+    source_flavor: bb
+    signal: false
+    survival_scaled: true
+    real_protons: true
+    fsr_state: noFSR
+    source_sample: QCDbb_superchic
+    correction_map: jet-energy/output/stage2_3_mva/corrections.yaml
+  - name: QEDcc_superchic
+    generator: superchic
+    process: QEDcc
+    source_flavor: cc
+    signal: false
+    survival_scaled: false
+    real_protons: true
+    fsr_state: noFSR
+    source_sample: QEDcc_superchic
+    correction_map: jet-energy/output/stage2_3_mva/corrections.yaml
+  - name: QCDcc_madgraph
+    generator: madgraph
+    process: QCDcc
+    source_flavor: cc
+    signal: false
+    survival_scaled: false
+    real_protons: false
+    campaigns: [QCDcc__v02, QCDcc__v03, QCDcc__v04, QCDcc__v05, QCDcc__v06, QCDcc__v07]
+    campaign_combination: disjoint
+    fsr_state: noFSR
+    source_sample: QCDcc_madgraph
+    correction_map: jet-energy/output/stage2_3_mva/corrections.yaml
+  - name: QCDbb_madgraph
+    generator: madgraph
+    process: QCDbb
+    source_flavor: bb
+    signal: false
+    survival_scaled: false
+    real_protons: false
+    campaigns: [QCDbb__v02, QCDbb__v03]
+    campaign_combination: stitch
+    fsr_state: noFSR
+    source_sample: QCDbb
+    correction_map: jet-energy/output/stage2_3/corrections.yaml
+  - name: Hbb_superchic
+    generator: superchic
+    process: Hbb
+    source_flavor: bb
+    signal: false
+    survival_scaled: true
+    real_protons: true
+    fsr_state: noFSR
+    source_sample: Hbb
+    correction_map: jet-energy/output/stage2_3/corrections.yaml
+  # FSR on, trimmed+MTD card, FSR-recovered jets calibrated to the recovered GenJet
+  # pair with one map per SuperChic sample and per MadGraph slice (see
+  # FSR_MTD_STATUS.md). sim_subcampaign is required: the process defaults are noFSR.
+  - name: Hcc_fsr
+    generator: superchic
+    process: Hcc
+    source_flavor: cc
+    signal: true
+    survival_scaled: true
+    real_protons: true
+    sim_subcampaign: Hcc_DPy8_FSR_200PU_MTD__v01
+    fsr_state: FSR
+    source_sample: Hcc
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  - name: QCDcc_superchic_fsr
+    generator: superchic
+    process: QCDcc
+    source_flavor: cc
+    signal: false
+    survival_scaled: true
+    real_protons: true
+    sim_subcampaign: QCDcc_DPy8_FSR_200PU_MTD__v01
+    fsr_state: FSR
+    source_sample: QCDcc_superchic
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  - name: QCDbb_superchic_fsr
+    generator: superchic
+    process: QCDbb
+    source_flavor: bb
+    signal: false
+    survival_scaled: true
+    real_protons: true
+    sim_subcampaign: QCDbb_DPy8_FSR_200PU_MTD__v01
+    fsr_state: FSR
+    source_sample: QCDbb_superchic
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  - name: QCDgg_superchic_fsr
+    generator: superchic
+    process: QCDgg
+    campaign: QCDgg__v04
+    max_files: 700
+    source_flavor: light
+    truth_pid_abs: 21
+    signal: false
+    survival_scaled: true
+    real_protons: true
+    sim_subcampaign: QCDgg_DPy8_FSR_200PU_MTD__v04
+    fsr_state: FSR
+    source_sample: QCDgg
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  - name: QEDcc_superchic_fsr
+    generator: superchic
+    process: QEDcc
+    source_flavor: cc
+    signal: false
+    survival_scaled: false
+    real_protons: true
+    sim_subcampaign: QEDcc_DPy8_FSR_200PU_MTD__v01
+    fsr_state: FSR
+    source_sample: QEDcc
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  - name: QCDcc_madgraph_fsr
+    generator: madgraph
+    process: QCDcc
+    source_flavor: cc
+    signal: false
+    survival_scaled: false
+    real_protons: false
+    campaigns: [QCDcc__v02, QCDcc__v03, QCDcc__v04, QCDcc__v05, QCDcc__v06, QCDcc__v07]
+    campaign_combination: disjoint
+    sim_subcampaign: QCDcc_DPy8_FSR_200PU_MTD__{campaign}
+    fsr_state: FSR
+    source_sample: QCDcc_madgraph_{campaign}
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  # b->c mistag background: the disjoint bb slices replace the stitched noFSR v02-v03.
+  - name: QCDbb_madgraph_fsr
+    generator: madgraph
+    process: QCDbb
+    source_flavor: bb
+    signal: false
+    survival_scaled: false
+    real_protons: false
+    campaigns: [QCDbb__v04, QCDbb__v05, QCDbb__v06, QCDbb__v07, QCDbb__v08, QCDbb__v09]
+    campaign_combination: disjoint
+    sim_subcampaign: QCDbb_DPy8_FSR_200PU_MTD__{campaign}
+    fsr_state: FSR
+    source_sample: QCDbb_madgraph_{campaign}
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+
+profiles:
+  parity_five_class:
+    components: [Hcc, QCDcc_superchic, QCDbb_superchic, QEDcc_superchic, QCDcc_madgraph, QCDbb_madgraph, Hbb_superchic]
+    class_map:
+      Hcc: Hcc
+      QCDcc_superchic: exclusive_QCD
+      QCDbb_superchic: exclusive_QCD
+      QEDcc_superchic: exclusive_QED
+      QCDcc_madgraph: nonexclusive_QCD
+      QCDbb_madgraph: nonexclusive_QCD
+      Hbb_superchic: Hbb_resonant
+    component_overrides:
+      QCDcc_madgraph:
+        campaigns: [QCDcc__v01]
+        campaign_combination: stitch
+    proton_backend: legacy_pool
+    feature_set: legacy_locked
+    jets: leading
+    corrections: false
+    max_abs_jet_eta: null
+    track_min_pt_gev: 0.5
+  nominal_full:
+    components: [Hcc, QCDcc_superchic, QCDbb_superchic, QEDcc_superchic, QCDcc_madgraph, QCDbb_madgraph, Hbb_superchic]
+    class_map:
+      Hcc: Hcc
+      QCDcc_superchic: exclusive_QCD
+      QCDbb_superchic: exclusive_QCD
+      QEDcc_superchic: exclusive_QED
+      QCDcc_madgraph: nonexclusive_QCD
+      QCDbb_madgraph: nonexclusive_QCD
+      Hbb_superchic: Hbb_resonant
+    proton_backend: analytic
+    jets: leading
+    corrections: true
+    max_abs_jet_eta: 3.0
+    track_min_pt_gev: 2.0
+  nominal_no_hbb_resonant:
+    components: [Hcc, QCDcc_superchic, QCDbb_superchic, QEDcc_superchic, QCDcc_madgraph, QCDbb_madgraph]
+    class_map:
+      Hcc: Hcc
+      QCDcc_superchic: exclusive_QCD
+      QCDbb_superchic: exclusive_QCD
+      QEDcc_superchic: exclusive_QED
+      QCDcc_madgraph: nonexclusive_QCD
+      QCDbb_madgraph: nonexclusive_QCD
+    proton_backend: analytic
+    jets: leading
+    corrections: true
+    max_abs_jet_eta: 3.0
+    track_min_pt_gev: 2.0
+  # FSR+MTD version of nominal_no_hbb_resonant. Tracks from 0.5 GeV: MTD removes about
+  # two thirds of the leaked pileup tracks that motivated the 2 GeV threshold.
+  fsr_mtd_no_hbb_resonant:
+    components: [Hcc_fsr, QCDcc_superchic_fsr, QCDbb_superchic_fsr, QEDcc_superchic_fsr, QCDcc_madgraph_fsr, QCDbb_madgraph_fsr]
+    class_map:
+      Hcc_fsr: Hcc
+      QCDcc_superchic_fsr: exclusive_QCD
+      QCDbb_superchic_fsr: exclusive_QCD
+      QEDcc_superchic_fsr: exclusive_QED
+      QCDcc_madgraph_fsr: nonexclusive_QCD
+      QCDbb_madgraph_fsr: nonexclusive_QCD
+    proton_backend: analytic
+    jets: leading
+    corrections: true
+    max_abs_jet_eta: 3.0
+    track_min_pt_gev: 0.5
+  # Current nominal H(cc) inputs: the H(bb) feature/correction setup plus the
+  # exclusive gg mistag background. Inclusive light jets and DPE are omitted.
+  fsr_mtd_exclusive_gg:
+    feature_set: new_list_mass_estimator
+    components: [Hcc_fsr, QCDcc_superchic_fsr, QCDbb_superchic_fsr, QCDgg_superchic_fsr, QEDcc_superchic_fsr, QCDcc_madgraph_fsr, QCDbb_madgraph_fsr]
+    class_map:
+      Hcc_fsr: Hcc
+      QCDcc_superchic_fsr: exclusive_QCD
+      QCDbb_superchic_fsr: exclusive_QCD
+      QCDgg_superchic_fsr: exclusive_QCDgg
+      QEDcc_superchic_fsr: exclusive_QED
+      QCDcc_madgraph_fsr: nonexclusive_QCD
+      QCDbb_madgraph_fsr: nonexclusive_QCD
+    proton_backend: analytic
+    jets: leading
+    corrections: true
+    max_abs_jet_eta: 3.0
+    track_min_pt_gev: 0.5
+  charm_only_three_class:
+    components: [Hcc, QCDcc_superchic, QEDcc_superchic, QCDcc_madgraph]
+    class_map:
+      Hcc: Hcc
+      QCDcc_superchic: exclusive_continuum
+      QEDcc_superchic: exclusive_continuum
+      QCDcc_madgraph: nonexclusive_QCD
+    proton_backend: analytic
+    jets: leading
+    corrections: true
+    max_abs_jet_eta: 3.0
+    track_min_pt_gev: 2.0
+  charm_only_four_class:
+    components: [Hcc, QCDcc_superchic, QEDcc_superchic, QCDcc_madgraph]
+    class_map:
+      Hcc: Hcc
+      QCDcc_superchic: exclusive_QCD
+      QEDcc_superchic: exclusive_QED
+      QCDcc_madgraph: nonexclusive_QCD
+    proton_backend: analytic
+    jets: leading
+    corrections: true
+    max_abs_jet_eta: 3.0
+    track_min_pt_gev: 2.0
