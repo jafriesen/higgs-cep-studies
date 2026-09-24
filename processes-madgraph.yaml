@@ -1,0 +1,216 @@
+QCDbb:
+  process_command: p p > b b~
+  jet_type: b
+  final_pdg: 5
+  default_campaign:
+    main: QCDbb__v02
+    hadr-pythia: QCDbb__v02
+    sim-delphes: QCDbb_DPy8_noFSR_200PU__v02
+  campaigns:
+    QCDbb__v01:
+      phase_space:
+        parton_pt_gev: [15.0, 80.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [50.0, 160.0]
+      mva_subcampaign: QCDbb_DPy8_noFSR_200PU__v01
+      hadr-pythia:
+        - QCDbb__v01
+        - QCDbb_noFSR__v01
+        - QCDbb_FSR__v01
+      sim-delphes:
+        - QCDbb__v01
+        - QCDbb_noFSR__v01
+        - QCDbb_FSR__v01
+        - QCDbb_FSR_200PU__v01
+        - QCDbb_DPy8_FSR_200PU__v01
+        - QCDbb_DPy8_noFSR_200PU__v01
+    QCDbb__v02:
+      phase_space:
+        parton_pt_gev: [25.0, 100.0]
+        max_abs_eta: 2.5
+        dijet_mass_gev: [70.0, 180.0]
+      mva_subcampaign: QCDbb_DPy8_noFSR_200PU__v02
+      hadr-pythia:
+        - QCDbb__v02
+        - QCDbb_noFSR__v02
+      sim-delphes:
+        - QCDbb__v02
+        - QCDbb_noFSR__v02
+        - QCDbb_DPy8_FSR_200PU__v02
+        - QCDbb_DPy8_noFSR_200PU__v02
+    QCDbb__v03:
+      phase_space:
+        parton_pt_gev: [30.0, 100.0]
+        max_abs_eta: 1.5
+        dijet_mass_gev: [70.0, 140.0]
+      mva_subcampaign: QCDbb_DPy8_noFSR_200PU__v03
+      hadr-pythia:
+        - QCDbb__v03
+      sim-delphes:
+        - QCDbb_DPy8_noFSR_200PU__v03
+
+    # bulk 25-35 GeV; DEFERRED pending the cc result, size then
+    QCDbb__v04:
+      phase_space:
+        parton_pt_gev: [25.0, 35.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [100.0, 1000.0]
+      mva_subcampaign: QCDbb_DPy8_noFSR_200PU__v04
+      hadr-pythia:
+        - QCDbb__v04
+      sim-delphes:
+        - QCDbb_DPy8_noFSR_200PU__v04
+        - QCDbb_DPy8_FSR_200PU_MTD__v04
+    # bulk 35-50 GeV; DEFERRED pending the cc result, size then
+    QCDbb__v05:
+      phase_space:
+        parton_pt_gev: [35.0, 50.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [100.0, 1000.0]
+      mva_subcampaign: QCDbb_DPy8_noFSR_200PU__v05
+      hadr-pythia:
+        - QCDbb__v05
+      sim-delphes:
+        - QCDbb_DPy8_noFSR_200PU__v05
+        - QCDbb_DPy8_FSR_200PU_MTD__v05
+    # bulk 50-70 GeV; DEFERRED pending the cc result, size then
+    QCDbb__v06:
+      phase_space:
+        parton_pt_gev: [50.0, 70.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [100.0, 1000.0]
+      mva_subcampaign: QCDbb_DPy8_noFSR_200PU__v06
+      hadr-pythia:
+        - QCDbb__v06
+      sim-delphes:
+        - QCDbb_DPy8_noFSR_200PU__v06
+        - QCDbb_DPy8_FSR_200PU_MTD__v06
+    # bulk 70-120 GeV; DEFERRED pending the cc result, size then
+    QCDbb__v07:
+      phase_space:
+        parton_pt_gev: [70.0, 120.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [100.0, 1000.0]
+      mva_subcampaign: QCDbb_DPy8_noFSR_200PU__v07
+      hadr-pythia:
+        - QCDbb__v07
+      sim-delphes:
+        - QCDbb_DPy8_noFSR_200PU__v07
+        - QCDbb_DPy8_FSR_200PU_MTD__v07
+    # low-mass satellite; DEFERRED pending the cc result, size then
+    QCDbb__v08:
+      phase_space:
+        parton_pt_gev: [25.0, 120.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [70.0, 100.0]
+      mva_subcampaign: QCDbb_DPy8_noFSR_200PU__v08
+      hadr-pythia:
+        - QCDbb__v08
+      sim-delphes:
+        - QCDbb_DPy8_noFSR_200PU__v08
+        - QCDbb_DPy8_FSR_200PU_MTD__v08
+    # low-pT, training only; DEFERRED pending the cc result, size then
+    QCDbb__v09:
+      phase_space:
+        parton_pt_gev: [15.0, 25.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [50.0, 1000.0]
+      mva_subcampaign: QCDbb_DPy8_noFSR_200PU__v09
+      hadr-pythia:
+        - QCDbb__v09
+      sim-delphes:
+        - QCDbb_DPy8_noFSR_200PU__v09
+        - QCDbb_DPy8_FSR_200PU_MTD__v09
+
+QCDcc:
+  process_command: p p > c c~
+  jet_type: c
+  final_pdg: 4
+  default_campaign:
+    main: QCDcc__v01
+    hadr-pythia: QCDcc__v01
+    sim-delphes: QCDcc_DPy8_noFSR_200PU__v01
+  campaigns:
+    QCDcc__v01:
+      phase_space:
+        parton_pt_gev: [30.0, 100.0]
+        max_abs_eta: 1.5
+        dijet_mass_gev: [70.0, 140.0]
+      mva_subcampaign: QCDcc_DPy8_noFSR_200PU__v01
+      hadr-pythia:
+        - QCDcc__v01
+      sim-delphes:
+        - QCDcc_DPy8_noFSR_200PU__v01
+    # bulk 25-35 GeV; target 12.1M events
+    QCDcc__v02:
+      phase_space:
+        parton_pt_gev: [25.0, 35.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [100.0, 1000.0]
+      mva_subcampaign: QCDcc_DPy8_noFSR_200PU__v02
+      hadr-pythia:
+        - QCDcc__v02
+      sim-delphes:
+        - QCDcc_DPy8_noFSR_200PU__v02
+        - QCDcc_DPy8_FSR_200PU_MTD__v02
+    # bulk 35-50 GeV; target 20.8M events
+    QCDcc__v03:
+      phase_space:
+        parton_pt_gev: [35.0, 50.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [100.0, 1000.0]
+      mva_subcampaign: QCDcc_DPy8_noFSR_200PU__v03
+      hadr-pythia:
+        - QCDcc__v03
+      sim-delphes:
+        - QCDcc_DPy8_noFSR_200PU__v03
+        - QCDcc_DPy8_FSR_200PU_MTDtest__v03
+        - QCDcc_DPy8_FSR_200PU_MTD__v03
+    # bulk 50-70 GeV; target 20.4M events
+    QCDcc__v04:
+      phase_space:
+        parton_pt_gev: [50.0, 70.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [100.0, 1000.0]
+      mva_subcampaign: QCDcc_DPy8_noFSR_200PU__v04
+      hadr-pythia:
+        - QCDcc__v04
+      sim-delphes:
+        - QCDcc_DPy8_noFSR_200PU__v04
+        - QCDcc_DPy8_FSR_200PU_MTD__v04
+    # bulk 70-120 GeV; target 2.7M events
+    QCDcc__v05:
+      phase_space:
+        parton_pt_gev: [70.0, 120.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [100.0, 1000.0]
+      mva_subcampaign: QCDcc_DPy8_noFSR_200PU__v05
+      hadr-pythia:
+        - QCDcc__v05
+      sim-delphes:
+        - QCDcc_DPy8_noFSR_200PU__v05
+        - QCDcc_DPy8_FSR_200PU_MTD__v05
+    # low-mass satellite; target 7.0M events
+    QCDcc__v06:
+      phase_space:
+        parton_pt_gev: [25.0, 120.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [70.0, 100.0]
+      mva_subcampaign: QCDcc_DPy8_noFSR_200PU__v06
+      hadr-pythia:
+        - QCDcc__v06
+      sim-delphes:
+        - QCDcc_DPy8_noFSR_200PU__v06
+        - QCDcc_DPy8_FSR_200PU_MTD__v06
+    # low-pT, training only; target 5.0M events
+    QCDcc__v07:
+      phase_space:
+        parton_pt_gev: [15.0, 25.0]
+        max_abs_eta: 3.0
+        dijet_mass_gev: [50.0, 1000.0]
+      mva_subcampaign: QCDcc_DPy8_noFSR_200PU__v07
+      hadr-pythia:
+        - QCDcc__v07
+      sim-delphes:
+        - QCDcc_DPy8_noFSR_200PU__v07
+        - QCDcc_DPy8_FSR_200PU_MTD__v07

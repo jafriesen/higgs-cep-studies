@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-REQUEST_MEMORY=4096
+REQUEST_MEMORY=8192
 
 usage() {
   cat <<'USAGE'
@@ -10,6 +10,8 @@ Usage:
   submit_minbias_condor.sh (--events TOTAL | --events-per-job EVENTS) --jobs N \
     [--campaign NAME] [--seed-base BASE] [--e-cm ECM_GEV] \
     [--processes "SoftQCD:all"] [--output-dir DIR] [--overwrite] [--dry-run]
+
+Seeds default to 1000, 1001, ... in job order. Override the first seed with --seed-base.
 
 Examples:
   ./submit_minbias_condor.sh --events 100000 --jobs 100 --campaign minbias_v01
@@ -36,7 +38,7 @@ TOTAL_EVENTS=""
 JOBS=""
 EVENTS_PER_JOB=""
 CAMPAIGN="minbias__test"
-SEED_BASE=""
+SEED_BASE=1000
 E_CM=14000.0
 PROCESSES="SoftQCD:all"
 OUTPUT_DIR=""
@@ -84,8 +86,12 @@ if [[ -n "$EVENTS_PER_JOB" ]] && { ! [[ "$EVENTS_PER_JOB" =~ ^[0-9]+$ ]] || (( E
   echo "ERROR: --events-per-job must be a positive integer." >&2
   exit 1
 fi
-if [[ -n "$SEED_BASE" ]] && { ! [[ "$SEED_BASE" =~ ^[0-9]+$ ]]; }; then
+if ! [[ "$SEED_BASE" =~ ^[0-9]+$ ]]; then
   echo "ERROR: --seed-base must be a non-negative integer." >&2
+  exit 1
+fi
+if (( SEED_BASE + JOBS - 1 > 900000000 )); then
+  echo "ERROR: job seeds must not exceed Pythia's maximum seed of 900000000." >&2
   exit 1
 fi
 if [[ -z "$CAMPAIGN" ]]; then
@@ -160,11 +166,7 @@ for (( job = 1; job <= JOBS; job++ )); do
     JOB_EVENTS=$(( BASE_EVENTS + 1 ))
   fi
 
-  if [[ -n "$SEED_BASE" ]]; then
-    JOB_SEED=$(( SEED_BASE + job - 1 ))
-  else
-    JOB_SEED="-"
-  fi
+  JOB_SEED=$(( SEED_BASE + job - 1 ))
   echo "$job $JOB_EVENTS $JOB_SEED" >> "$QUEUE_FILE"
 done
 
@@ -175,7 +177,7 @@ set -euo pipefail
 
 JOB_INDEX="\${1:?missing JOB_INDEX}"
 EVENTS="\${2:?missing EVENTS}"
-SEED="\${3:-}"
+SEED="\${3:?missing SEED}"
 
 STUDY_DIR=$(printf '%q' "$STUDY_DIR")
 PARQUET_DIR=$(printf '%q' "$PARQUET_DIR")
@@ -188,12 +190,12 @@ echo "Batch host: \$(hostname)"
 echo "Batch scratch: \$PWD"
 echo "Job index: \$JOB_INDEX"
 echo "Events: \$EVENTS"
-echo "Seed: \${SEED:-<generator default>}"
+echo "Seed: \$SEED"
 
 cd "\$STUDY_DIR"
 source env/setup_pythia.sh
 
-python3 -c "import pythia8mc, pyarrow"
+python3 -c "import pythia8, pyarrow"
 
 mkdir -p "\$PARQUET_DIR"
 OUTPUT="\$PARQUET_DIR/\${CAMPAIGN}_job_\${JOB_INDEX}.parquet"
@@ -204,9 +206,7 @@ GEN_ARGS=(
   --processes "\$PROCESSES"
   --output "\$OUTPUT"
 )
-if [[ -n "\$SEED" && "\$SEED" != "-" ]]; then
-  GEN_ARGS+=(--seed "\$SEED")
-fi
+GEN_ARGS+=(--seed "\$SEED")
 
 echo "Run command: python3 -u generation-pythia/scripts/generate_minbias.py \${GEN_ARGS[*]}"
 python3 -u generation-pythia/scripts/generate_minbias.py "\${GEN_ARGS[@]}"
@@ -220,7 +220,7 @@ campaign=$CAMPAIGN
 events=$TOTAL_EVENTS
 jobs=$JOBS
 events_per_job=${EVENTS_PER_JOB:-<split-total>}
-seed_base=${SEED_BASE:-<generator-default>}
+seed_base=$SEED_BASE
 e_cm=$E_CM
 processes=$PROCESSES
 output_dir=${OUTPUT_DIR:-<config default>}

@@ -14,7 +14,7 @@ def repo_root():
 ROOT = repo_root()
 sys.path.insert(0, str(ROOT))
 
-from common.config_utils import discover_event_files  # noqa: E402
+from common.config_utils import natural_key  # noqa: E402
 from common.path_helper import (  # noqa: E402
     generation_campaign_config,
     generation_campaign_root,
@@ -25,16 +25,13 @@ from common.path_helper import (  # noqa: E402
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Convert generated event records to Pythia/HepMC campaigns."
-    )
-    parser.add_argument(
-        "--generator", choices=("superchic", "fpmc"), default="superchic"
+        description="Run Pythia on MadGraph campaigns listed in processes-madgraph.yaml."
     )
     parser.add_argument(
         "--process",
         action="append",
         dest="processes",
-        help="Process name to run. May be repeated. Defaults to all processes.",
+        help="Process name to run. May be repeated. Defaults to all MadGraph processes.",
     )
     parser.add_argument(
         "--campaign",
@@ -44,25 +41,32 @@ def parse_args():
     parser.add_argument(
         "--tag",
         default=None,
-        help="hadr-Pythia subcampaign tag. Defaults to the campaign config or campaign name.",
+        help="Pythia campaign name within the hadr-Pythia stage. Defaults to the campaign name.",
     )
     parser.add_argument("--max-events", type=int, default=None, help="Optional event cap per output file")
+    parser.add_argument("--max-files", type=int, default=None, help="Optional MadGraph LHE input file cap per process")
     parser.add_argument(
-        "--max-files",
+        "--file-index",
         type=int,
         default=None,
-        help="Optional SuperChic input file cap per process. Defaults to process max_files.",
+        help="Process only this 1-based index in the sorted LHE input file list",
     )
     parser.add_argument("--seed", type=int, default=None, help="Optional Pythia seed")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing HepMC outputs")
     parser.add_argument("--dry-run", action="store_true", help="Print commands without running Pythia")
     parser.add_argument("--verbose", action="store_true", help="Pass verbose mode to the Pythia bridge")
-    parser.add_argument(
-        "--flat-final-state",
-        action="store_true",
-        help="Write a flat HepMC final state; required for FPMC HADR=Y records",
-    )
     return parser.parse_args()
+
+
+def validate_args(args):
+    if args.max_events is not None and args.max_events <= 0:
+        raise RuntimeError("--max-events must be > 0")
+    if args.max_files is not None and args.max_files <= 0:
+        raise RuntimeError("--max-files must be > 0")
+    if args.file_index is not None and args.file_index <= 0:
+        raise RuntimeError("--file-index must be > 0")
+    if args.seed is not None and args.seed < 0:
+        raise RuntimeError("--seed must be non-negative")
 
 
 def selected_processes(processes, requested):
@@ -76,14 +80,15 @@ def selected_processes(processes, requested):
 
 
 def binary_path(root):
-    build_dir = Path(os.environ.get("TMPDIR", "/tmp")) / f"higgs_cep_pythia_{os.environ.get('USER', 'user')}"
-    return build_dir / "process_superchic"
+    user = os.environ.get("USER", "user")
+    build_dir = Path(os.environ.get("TMPDIR", "/tmp")) / f"higgs_cep_pythia_{user}"
+    return build_dir / "process_madgraph"
 
 
 def build_binary(root):
-    """Compile process_superchic.cc against the LCG view's Pythia8/HepMC3, caching the binary."""
+    """Compile process_madgraph.cc against the LCG view's Pythia8/HepMC3, caching the binary."""
     binary = binary_path(root)
-    src = root / "generation-pythia" / "scripts" / "process_superchic.cc"
+    src = root / "generation-pythia" / "scripts" / "process_madgraph.cc"
     if binary.exists() and binary.stat().st_mtime >= src.stat().st_mtime:
         return binary
 
@@ -127,8 +132,6 @@ def build_command(binary, manifest_file, args):
         command.extend(["--max-events", str(args.max_events)])
     if args.verbose:
         command.append("--verbose")
-    if args.flat_final_state:
-        command.append("--flat-final-state")
     return command
 
 
@@ -139,70 +142,74 @@ def manifest_row(input_file, output_file, seed):
     return f"{input_file}\t{output_file}\t{seed if seed is not None else -1}\n"
 
 
+def discover_lhe_files(path, max_files):
+    files = sorted(path.glob("*.lhe"), key=natural_key)
+    if max_files is not None:
+        files = files[:max_files]
+    if not files:
+        raise RuntimeError(f"No MadGraph LHE files found in {path}")
+    return files
+
+
+def event_records_dir(process_name, campaign_name):
+    cfg = generation_config("madgraph")
+    return (
+        generation_campaign_root("madgraph", process_name, campaign_name)
+        / cfg["generation_dir"]
+        / "evrecs"
+    )
+
+
+def stage_output_dir(process_name, campaign_name, tag):
+    cfg = generation_config("madgraph")
+    stage_dir = (cfg.get("stage_dirs") or {}).get("hadr-pythia")
+    if not stage_dir:
+        raise RuntimeError("config.yaml must define generation.madgraph.stage_dirs.hadr-pythia")
+    return generation_campaign_root("madgraph", process_name, campaign_name) / stage_dir / tag
+
+
 def configured_max_files(process_config):
     max_files = process_config.get("max_files")
     if max_files is None:
         return None
     max_files = int(max_files)
     if max_files <= 0:
-        raise RuntimeError("SuperChic process max_files must be > 0")
+        raise RuntimeError("MadGraph process max_files must be > 0")
     return max_files
-
-
-def default_hadr_pythia_tag(process_config, campaign_name):
-    defaults = process_config.get("default_campaign") or {}
-    if isinstance(defaults, dict):
-        return defaults.get("hadr-pythia") or campaign_name
-    return campaign_name
-
-
-def event_records_dir(generator, process_name, campaign_name):
-    cfg = generation_config(generator)
-    return (
-        generation_campaign_root(generator, process_name, campaign_name)
-        / cfg["generation_dir"]
-        / "evrecs"
-    )
-
-
-def stage_output_dir(generator, process_name, campaign_name, tag):
-    cfg = generation_config(generator)
-    stage_dir = (cfg.get("stage_dirs") or {}).get("hadr-pythia")
-    if not stage_dir:
-        raise RuntimeError("config.yaml must define generation.superchic.stage_dirs.hadr-pythia")
-    return (
-        generation_campaign_root(generator, process_name, campaign_name)
-        / stage_dir
-        / tag
-        / "hepmc"
-    )
 
 
 def main():
     args = parse_args()
+    validate_args(args)
     root = ROOT
-    processes = generation_processes(args.generator)
+    processes = generation_processes("madgraph")
     binary = build_binary(root) if not args.dry_run else binary_path(root)
 
     for process_name in selected_processes(processes, args.processes):
         process_config = processes[process_name] or {}
-        campaign_name, _ = generation_campaign_config(
-            args.generator, process_name, args.campaign
-        )
-        tag = args.tag or default_hadr_pythia_tag(process_config, campaign_name)
+        campaign_name, _ = generation_campaign_config("madgraph", process_name, args.campaign)
+        tag = args.tag or campaign_name
         max_files = args.max_files
         if max_files is None:
             max_files = configured_max_files(process_config)
 
-        input_dir = event_records_dir(args.generator, process_name, campaign_name)
-        input_files = discover_event_files(input_dir, max_files=max_files)
+        input_dir = event_records_dir(process_name, campaign_name)
+        input_files = discover_lhe_files(input_dir, max_files=max_files)
+        indexed_input_files = list(enumerate(input_files, start=1))
+        if args.file_index is not None:
+            if args.file_index > len(indexed_input_files):
+                raise RuntimeError(
+                    f"--file-index {args.file_index} exceeds the {len(indexed_input_files)} "
+                    f"MadGraph LHE files found for {process_name}"
+                )
+            indexed_input_files = [indexed_input_files[args.file_index - 1]]
 
-        output_dir = stage_output_dir(args.generator, process_name, campaign_name, tag)
+        output_dir = stage_output_dir(process_name, campaign_name, tag)
         if not args.dry_run:
             output_dir.mkdir(parents=True, exist_ok=True)
 
         rows = []
-        for index, input_file in enumerate(input_files, start=1):
+        for index, input_file in indexed_input_files:
             output_file = output_dir / f"{process_name}_{tag}_{index}.hepmc"
             if output_file.exists() and not args.overwrite:
                 print(f"Skipping existing output: {output_file}")
@@ -216,7 +223,7 @@ def main():
 
         if args.dry_run:
             command = build_command(binary, "<manifest>", args)
-            print(" ".join(command), f"# {len(rows)} files -> {output_dir}", flush=True)
+            print(" ".join(command), f"# {len(rows)} files", flush=True)
             continue
 
         with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".tsv") as manifest:

@@ -7,6 +7,8 @@ usage() {
 Usage:
   run_superchic.sh --process PROCESS --campaign CAMPAIGN [--card DAT_FILE]
     [--nev EVENTS] [--seed SEED] [--job JOB_INDEX] [--init]
+    [--survival-model MODEL] [--no-soft-survival]
+    [--mass-min GEV] [--mass-max GEV]
 USAGE
   exit 1
 }
@@ -27,6 +29,10 @@ NEVT=100
 SEED=""
 JOB_INDEX=""
 RUN_INIT=false
+SURVIVAL_MODEL=""
+NO_SOFT_SURVIVAL=false
+MASS_MIN=""
+MASS_MAX=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -37,6 +43,10 @@ while [[ $# -gt 0 ]]; do
     --seed) SEED="$2"; shift 2 ;;
     --job) JOB_INDEX="$2"; shift 2 ;;
     --init) RUN_INIT=true; shift ;;
+    --survival-model) SURVIVAL_MODEL="$2"; shift 2 ;;
+    --no-soft-survival) NO_SOFT_SURVIVAL=true; shift ;;
+    --mass-min) MASS_MIN="$2"; shift 2 ;;
+    --mass-max) MASS_MAX="$2"; shift 2 ;;
     -h|--help) usage ;;
     *) echo "ERROR: unknown argument: $1" >&2; usage ;;
   esac
@@ -64,10 +74,26 @@ fi
   echo "ERROR: --seed must be a positive integer." >&2
   exit 1
 }
+if [[ -n "$SURVIVAL_MODEL" ]] &&
+   { ! [[ "$SURVIVAL_MODEL" =~ ^[1-4]$ ]]; }; then
+  echo "ERROR: --survival-model must be one of 1, 2, 3, or 4." >&2
+  exit 1
+fi
 
 CARD="${CARD:-$DEFAULT_CARD}"
 [[ "$CARD" == /* ]] || CARD="$STUDY_DIR/$CARD"
 [[ -f "$CARD" ]] || { echo "ERROR: card not found: $CARD" >&2; exit 1; }
+CARD_ARGS=()
+[[ -n "$SURVIVAL_MODEL" ]] && CARD_ARGS+=(--survival-model "$SURVIVAL_MODEL")
+[[ "$NO_SOFT_SURVIVAL" == true ]] && CARD_ARGS+=(--no-soft-survival)
+[[ -n "$MASS_MIN" ]] && CARD_ARGS+=(--mass-min "$MASS_MIN")
+[[ -n "$MASS_MAX" ]] && CARD_ARGS+=(--mass-max "$MASS_MAX")
+if [[ -n "$MASS_MIN" && -n "$MASS_MAX" ]]; then
+  awk -v low="$MASS_MIN" -v high="$MASS_MAX" 'BEGIN { exit !(low < high) }' || {
+    echo "ERROR: --mass-min must be below --mass-max" >&2
+    exit 1
+  }
+fi
 
 source "$STUDY_DIR/env/setup_superchic.sh"
 eval "$(python3 "$PATH_HELPER" generation-env \
@@ -90,6 +116,10 @@ log_step "Campaign: $CAMPAIGN"
 log_step "Job tag: $JOB_TAG"
 log_step "Generation dir: $GENERATION_ROOT"
 log_step "Using card template: $CARD"
+[[ -n "$SURVIVAL_MODEL" ]] && log_step "Survival model override: $SURVIVAL_MODEL"
+[[ "$NO_SOFT_SURVIVAL" == true ]] && log_step "Soft survival effects: disabled"
+[[ -n "$MASS_MIN" || -n "$MASS_MAX" ]] && \
+  log_step "Generated mass range: ${MASS_MIN:-template} to ${MASS_MAX:-template} GeV"
 
 SUPERCHIC_EXE=""
 for candidate in \
@@ -130,7 +160,8 @@ cp -f "$RUNTIME_CARDS_DIR"/* "$RUN_DIR/Cards/"
 CARD_LOCAL="$RUN_DIR/job.DAT"
 python3 "$CARD_GENERATOR" \
   --template "$CARD" --process "$PROCESS" --nev "$NEVT" --seed "$SEED" \
-  --out-tag "$JOB_TAG" --output "$CARD_LOCAL"
+  --out-tag "$JOB_TAG" --output "$CARD_LOCAL" \
+  "${CARD_ARGS[@]}"
 
 INIT_INTAG=$(awk '/\[intag\]/ {gsub(/'\''/, "", $1); print $1; exit}' "$CARD_LOCAL")
 INIT_SCREEN_FILE="screening${INIT_INTAG}.dat"
@@ -138,22 +169,28 @@ INIT_RTS=$(awk '/\[rts\]/ {print $1; exit}' "$CARD_LOCAL")
 INIT_ISURV=$(awk '/\[isurv\]/ {print $1; exit}' "$CARD_LOCAL")
 INIT_PDFNAME=$(awk '/\[PDFname\]/ {gsub(/'\''/, "", $1); print $1; exit}' "$CARD_LOCAL")
 INIT_PDFMEMBER=$(awk '/\[PDFmember\]/ {print $1; exit}' "$CARD_LOCAL")
+SOFT_SURVIVAL_VALUE=$(awk '/\[sfaci\]/ {print $1; exit}' "$CARD_LOCAL")
+SOFT_SURVIVAL_ENABLED=true
+[[ "$SOFT_SURVIVAL_VALUE" == ".false." ]] && SOFT_SURVIVAL_ENABLED=false
 INIT_KEY="$(printf '%s|%s|%s|%s|%s\n' \
   "$INIT_RTS" "$INIT_ISURV" "$INIT_INTAG" "$INIT_PDFNAME" "$INIT_PDFMEMBER" |
   sha1sum | awk '{print $1}')"
 INIT_ARGS=(--process "$PROCESS" --campaign "$CAMPAIGN" --card "$CARD")
-if [[ "$RUN_INIT" == true ]]; then
+[[ -n "$SURVIVAL_MODEL" ]] && INIT_ARGS+=(--survival-model "$SURVIVAL_MODEL")
+if [[ "$RUN_INIT" == true && "$NO_SOFT_SURVIVAL" != true ]]; then
   log_step "Preparing initialized inputs"
   "${INIT_SCRIPT}" "${INIT_ARGS[@]}" 2>&1 | tee -a "$LOG"
 fi
-if [[ ! -f "$INIT_INPUTS_DIR/$INIT_SCREEN_FILE" ||
-      ! -f "$GENERATION_ROOT/init/init_key.txt" ||
-      "$(cat "$GENERATION_ROOT/init/init_key.txt" 2>/dev/null || true)" != "$INIT_KEY" ]]; then
-  log_step "ERROR: matching initialized inputs are not available"
-  log_step "Run prepare_superchic_init.sh or pass --init."
-  exit 1
+if [[ "$NO_SOFT_SURVIVAL" != true ]]; then
+  if [[ ! -f "$INIT_INPUTS_DIR/$INIT_SCREEN_FILE" ||
+        ! -f "$GENERATION_ROOT/init/init_key.txt" ||
+        "$(cat "$GENERATION_ROOT/init/init_key.txt" 2>/dev/null || true)" != "$INIT_KEY" ]]; then
+    log_step "ERROR: matching initialized inputs are not available"
+    log_step "Run prepare_superchic_init.sh or pass --init."
+    exit 1
+  fi
+  ln -s "$INIT_INPUTS_DIR" "$RUN_DIR/inputs"
 fi
-ln -s "$INIT_INPUTS_DIR" "$RUN_DIR/inputs"
 
 printf -v COMMAND '%q ' "$0" "${ORIGINAL_ARGS[@]}"
 METADATA_ARGS=(
@@ -164,6 +201,8 @@ METADATA_ARGS=(
   --string-field "mode=run" \
   --field "events=$NEVT" \
   --field "seed=$SEED" \
+  --field "survival_model=$INIT_ISURV" \
+  --field "soft_survival=$SOFT_SURVIVAL_ENABLED" \
   --string-field "card=$CARD" \
   --string-field "command=${COMMAND% }" \
   --string-field "created_at=$(date -Iseconds)" \

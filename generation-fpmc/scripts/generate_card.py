@@ -12,7 +12,7 @@ from common.path_helper import (  # noqa: E402
 )
 
 
-def render_card(process, campaign, events, seed, lhefile="FPMC.lhe"):
+def render_card(process, campaign, events, seed, hadr="Y", lhefile="FPMC.lhe"):
     if events <= 0:
         raise RuntimeError("events must be a positive integer")
     if seed < 0:
@@ -20,41 +20,51 @@ def render_card(process, campaign, events, seed, lhefile="FPMC.lhe"):
     if not lhefile or "'" in lhefile or "\n" in lhefile:
         raise RuntimeError("LHE filename must be nonempty and cannot contain quotes or newlines")
 
-    process_cfg = generation_process_config("fpmc", process)
-    _, campaign_cfg = generation_campaign_config("fpmc", process, campaign)
-    hadronize = campaign_cfg.get("hadronize", True)
-    if not isinstance(hadronize, bool):
-        raise RuntimeError(
-            f"FPMC campaign '{campaign}' hadronize must be true or false"
-        )
+    hadr = str(hadr).upper()
+    if hadr not in ("Y", "N"):
+        raise RuntimeError("hadr must be Y or N")
 
-    required = ("process_code", "typint", "yjmin", "yjmax", "ptmin")
+    process_cfg = generation_process_config("fpmc", process)
+    generation_campaign_config("fpmc", process, campaign)
+
+    required = ("process_code", "typint")
     missing = [name for name in required if name not in process_cfg]
     if missing:
         raise RuntimeError(
             f"FPMC process '{process}' is missing: {', '.join(missing)}"
         )
 
+    typepr = process_cfg.get("typepr", "EXC")
+    nflux = process_cfg.get("nflux", 16)
+    yjmax = process_cfg.get("yjmax", 0.2)
+    yjmin = process_cfg.get("yjmin", 0.002)
+    ptmin = process_cfg.get("ptmin", 15.0)
+    ywwmin = process_cfg.get("ywwmin", 0.002)
+    ywwmax = process_cfg.get("ywwmax", 0.2)
+    isoftm = process_cfg.get("isoftm", 1)
+
     lines = [
         "OUTPUT      0",
         "OUTPUTLHE   1",
         f"LHEFILE     '{lhefile}'",
         f"MAXEV       {events}",
-        "TYPEPR      'EXC'",
+        f"TYPEPR      '{typepr}'",
         f"TYPINT      '{process_cfg['typint']}'",
         "ECMS        14000.",
         f"IPROC       {process_cfg['process_code']}",
-        "NFLUX       16",
-        f"YJMAX       {process_cfg['yjmax']}",
-        f"YJMIN       {process_cfg['yjmin']}",
-        f"PTMIN       {process_cfg['ptmin']}",
-        "YWWMIN      0.002",
-        "YWWMAX      0.2",
+        f"NFLUX       {nflux}",
+        f"YJMAX       {yjmax}",
+        f"YJMIN       {yjmin}",
+        f"PTMIN       {ptmin}",
+        f"YWWMIN      {ywwmin}",
+        f"YWWMAX      {ywwmax}",
         f"NRN1        {seed}",
-        f"HADR        '{'Y' if hadronize else 'N'}'",
+        f"HADR        '{hadr}'",
+        f"HMASS       125.0",
+        f"ISOFTM      {isoftm}"
     ]
-    if "hmass" in process_cfg:
-        lines.append(f"HMASS       {process_cfg['hmass']}")
+    if "ifit" in process_cfg:
+        lines.insert(-1, f"IFIT        {process_cfg['ifit']}")
     return "\n".join(lines) + "\n"
 
 
@@ -64,6 +74,7 @@ def parse_args():
     parser.add_argument("--campaign", required=True)
     parser.add_argument("--nev", "--events", dest="events", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=33799)
+    parser.add_argument("--hadr", type=str.upper, choices=("Y", "N"), default="Y")
     parser.add_argument("--lhefile", default="FPMC.lhe")
     parser.add_argument("--output", type=Path, default=None)
     return parser.parse_args()
@@ -72,7 +83,14 @@ def parse_args():
 def main():
     args = parse_args()
     campaign, _ = generation_campaign_config("fpmc", args.process, args.campaign)
-    card = render_card(args.process, campaign, args.events, args.seed, args.lhefile)
+    card = render_card(
+        args.process,
+        campaign,
+        args.events,
+        args.seed,
+        args.hadr,
+        args.lhefile,
+    )
     if args.output is None:
         print(card, end="")
         return

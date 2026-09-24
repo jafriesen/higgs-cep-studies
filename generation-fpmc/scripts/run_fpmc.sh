@@ -6,7 +6,8 @@ usage() {
   cat <<'USAGE'
 Usage:
   run_fpmc.sh --process PROCESS --campaign CAMPAIGN [--nev EVENTS]
-    [--seed SEED] [--job JOB_INDEX] [--overwrite] [--dry-run]
+    [--seed SEED] [--job JOB_INDEX] [--hadr Y|N]
+    [--overwrite] [--dry-run]
 USAGE
   exit 1
 }
@@ -24,6 +25,7 @@ CAMPAIGN=""
 NEVT=1000
 SEED=""
 JOB_INDEX=""
+HADR="Y"
 OVERWRITE=false
 DRY_RUN=false
 
@@ -34,6 +36,7 @@ while [[ $# -gt 0 ]]; do
     --nev|--events) NEVT="$2"; shift 2 ;;
     --seed) SEED="$2"; shift 2 ;;
     --job) JOB_INDEX="$2"; shift 2 ;;
+    --hadr) HADR="${2^^}"; shift 2 ;;
     --overwrite) OVERWRITE=true; shift ;;
     --dry-run) DRY_RUN=true; shift ;;
     -h|--help) usage ;;
@@ -61,6 +64,10 @@ fi
   echo "ERROR: --seed must be a non-negative integer." >&2
   exit 1
 }
+[[ "$HADR" == "Y" || "$HADR" == "N" ]] || {
+  echo "ERROR: --hadr must be Y or N." >&2
+  exit 1
+}
 
 eval "$(python3 "$PATH_HELPER" generation-env \
   --generator fpmc --process "$PROCESS" --campaign "$CAMPAIGN")"
@@ -71,16 +78,37 @@ LHE_OUTPUT="$EVENT_RECORDS_DIR/FPMC_${JOB_TAG}.lhe"
 CARD_OUTPUT="$CARDS_DIR/card_${JOB_TAG}.dat"
 LOG_OUTPUT="$LOGS_DIR/run_${JOB_TAG}.log"
 
+EXISTING_HADR=""
+if [[ -f "$METADATA_FILE" ]]; then
+  EXISTING_HADR="$(
+    python3 -c 'import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(data.get("hadr", "")).upper())' "$METADATA_FILE"
+  )"
+fi
+if [[ -n "$EXISTING_HADR" && "$EXISTING_HADR" != "$HADR" ]]; then
+  if [[ "$OVERWRITE" != true ]]; then
+    echo "ERROR: campaign metadata records HADR $EXISTING_HADR, requested $HADR." >&2
+    echo "Use --overwrite to replace this campaign's FPMC generation outputs." >&2
+    exit 1
+  fi
+  if [[ "$DRY_RUN" != true ]]; then
+    rm -rf "$GENERATION_ROOT"
+  fi
+fi
+
 if [[ "$DRY_RUN" == true ]]; then
   echo "Process: $PROCESS"
   echo "Campaign: $CAMPAIGN"
   [[ -n "$JOB_INDEX" ]] && echo "Job index: $JOB_INDEX"
   echo "Seed: $SEED"
+  echo "HADR: $HADR"
   echo "LHE output: $LHE_OUTPUT"
   echo "Card output: $CARD_OUTPUT"
   echo "Log output: $LOG_OUTPUT"
   python3 "$CARD_GENERATOR" \
-    --process "$PROCESS" --campaign "$CAMPAIGN" --nev "$NEVT" --seed "$SEED"
+    --process "$PROCESS" --campaign "$CAMPAIGN" --nev "$NEVT" --seed "$SEED" \
+    --hadr "$HADR"
   exit 0
 fi
 
@@ -97,6 +125,7 @@ fi
 mkdir -p "$EVENT_RECORDS_DIR" "$CARDS_DIR" "$LOGS_DIR"
 python3 "$CARD_GENERATOR" \
   --process "$PROCESS" --campaign "$CAMPAIGN" --nev "$NEVT" --seed "$SEED" \
+  --hadr "$HADR" \
   --output "$CARD_OUTPUT"
 
 printf -v COMMAND '%q ' "$0" "${ORIGINAL_ARGS[@]}"
@@ -108,6 +137,7 @@ METADATA_ARGS=(
   --string-field "mode=run" \
   --field "events=$NEVT" \
   --field "seed=$SEED" \
+  --string-field "hadr=$HADR" \
   --string-field "command=${COMMAND% }" \
   --string-field "created_at=$(date -Iseconds)" \
   --string-field "runtime_source=${HIGGS_CEP_FPMC_DIR:-$STUDY_DIR/../fpmc}"
@@ -143,6 +173,7 @@ fi
   [[ -n "$JOB_INDEX" ]] && echo "Job index: $JOB_INDEX"
   echo "Events: $NEVT"
   echo "Seed: $SEED"
+  echo "HADR: $HADR"
   echo "Card: $CARD_OUTPUT"
   echo "LHE output: $LHE_OUTPUT"
 } > "$LOG_OUTPUT"

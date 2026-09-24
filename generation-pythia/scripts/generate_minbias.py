@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 import argparse
-import os
 from pathlib import Path
 import sys
 
 import pyarrow as pa
 import pyarrow.parquet as pq
-import pythia8mc as pythia8
+import pythia8
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -54,8 +53,6 @@ def parse_args():
 
 
 def configure_pythia(e_cm, processes, seed=None, verbose=False):
-    os.environ.pop("PYTHIA8DATA", None)
-
     pythia = pythia8.Pythia("", verbose)
     pythia.readString("Beams:idA = 2212")
     pythia.readString("Beams:idB = 2212")
@@ -107,6 +104,8 @@ def empty_columns():
 def append_event(columns, event_id, event):
     for particle_index in range(1, event.size()):
         particle = event[particle_index]
+        if not int(particle.id()) == 2212 or not particle.isFinal():
+            continue
         columns["event_id"].append(event_id)
         columns["particle_index"].append(particle_index)
         columns["pdg_id"].append(int(particle.id()))

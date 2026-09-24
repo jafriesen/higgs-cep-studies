@@ -2,8 +2,6 @@
 #include <Pythia8Plugins/HepMC3.h>
 
 #include <HepMC3/GenEvent.h>
-#include <HepMC3/GenParticle.h>
-#include <HepMC3/GenVertex.h>
 #include <HepMC3/Units.h>
 #include <HepMC3/WriterAscii.h>
 
@@ -22,7 +20,6 @@ struct Args {
   long max_events = -1;
   int seed = -1;
   bool verbose = false;
-  bool flat_final_state = false;
 };
 
 struct Job {
@@ -34,9 +31,9 @@ struct Job {
 void usage(const char* argv0) {
   std::cerr
       << "Usage:\n"
-      << "  " << argv0 << " --input LHE_OR_EVREC --output OUTPUT.hepmc\n"
+      << "  " << argv0 << " --input LHE --output OUTPUT.hepmc\n"
       << "  " << argv0 << " --manifest MANIFEST.tsv\n"
-      << "       [--max-events N] [--seed SEED] [--flat-final-state] [--verbose]\n";
+      << "       [--max-events N] [--seed SEED] [--verbose]\n";
 }
 
 Args parse_args(int argc, char** argv) {
@@ -62,8 +59,6 @@ Args parse_args(int argc, char** argv) {
       args.seed = std::stoi(require_value(arg));
     } else if (arg == "--verbose") {
       args.verbose = true;
-    } else if (arg == "--flat-final-state") {
-      args.flat_final_state = true;
     } else if (arg == "--help" || arg == "-h") {
       usage(argv[0]);
       std::exit(0);
@@ -95,12 +90,11 @@ void configure_pythia(Pythia8::Pythia& pythia, const fs::path& lhe, int seed, bo
   pythia.readString("Beams:frameType = 4");
   pythia.readString("Beams:LHEF = " + lhe.string());
 
-  pythia.readString("PartonLevel:MPI = off");
-  pythia.readString("PartonLevel:ISR = off");
-  pythia.readString("PartonLevel:Remnants = off");
-  pythia.readString("PartonLevel:FSR = off");
+  pythia.readString("PartonLevel:MPI = on");
+  pythia.readString("PartonLevel:ISR = on");
+  pythia.readString("PartonLevel:Remnants = on");
+  pythia.readString("PartonLevel:FSR = on");
   pythia.readString("HadronLevel:all = on");
-  pythia.readString("ProcessLevel:all = off");
 
   pythia.readString("Next:numberShowInfo = 0");
   pythia.readString("Next:numberShowProcess = 0");
@@ -120,27 +114,9 @@ void configure_pythia(Pythia8::Pythia& pythia, const fs::path& lhe, int seed, bo
 void write_event(Pythia8::Pythia& pythia,
                  HepMC3::Pythia8ToHepMC3& converter,
                  HepMC3::WriterAscii& writer,
-                 long event_number,
-                 bool flat_final_state) {
+                 long event_number) {
   HepMC3::GenEvent event(HepMC3::Units::GEV, HepMC3::Units::MM);
-  if (flat_final_state) {
-    auto vertex = std::make_shared<HepMC3::GenVertex>();
-    vertex->add_particle_in(std::make_shared<HepMC3::GenParticle>(
-        HepMC3::FourVector(0.0, 0.0, 7000.0, 7000.0), 2212, 4));
-    vertex->add_particle_in(std::make_shared<HepMC3::GenParticle>(
-        HepMC3::FourVector(0.0, 0.0, -7000.0, 7000.0), 2212, 4));
-    for (int index = 0; index < pythia.event.size(); ++index) {
-      const auto& source = pythia.event[index];
-      if (!source.isFinal()) {
-        continue;
-      }
-      vertex->add_particle_out(std::make_shared<HepMC3::GenParticle>(
-          HepMC3::FourVector(source.px(), source.py(), source.pz(), source.e()),
-          source.id(), 1));
-    }
-    event.add_vertex(vertex);
-    event.weights().push_back(pythia.info.weight());
-  } else if (!converter.fill_next_event(pythia, event)) {
+  if (!converter.fill_next_event(pythia, event)) {
     throw std::runtime_error("HepMC conversion failed for event " + std::to_string(event_number));
   }
   event.set_event_number(static_cast<int>(event_number));
@@ -150,7 +126,7 @@ void write_event(Pythia8::Pythia& pythia,
   }
 }
 
-long process_job(const Job& job, long max_events, bool verbose, bool flat_final_state) {
+long process_job(const Job& job, long max_events, bool verbose) {
   if (job.output.has_parent_path()) {
     fs::create_directories(job.output.parent_path());
   }
@@ -167,13 +143,11 @@ long process_job(const Job& job, long max_events, bool verbose, bool flat_final_
   }
   HepMC3::Pythia8ToHepMC3 converter;
   long written = 0;
-  long source_event = 0;
   int consecutive_failures = 0;
   int total_failures = 0;
   constexpr int max_failures = 1000;
 
   while (max_events < 0 || written < max_events) {
-    ++source_event;
     if (!pythia.next()) {
       if (pythia.info.atEndOfFile()) {
         break;
@@ -187,7 +161,7 @@ long process_job(const Job& job, long max_events, bool verbose, bool flat_final_
     }
     consecutive_failures = 0;
     ++written;
-    write_event(pythia, converter, writer, source_event, flat_final_state);
+    write_event(pythia, converter, writer, written);
   }
 
   if (verbose) {
@@ -222,8 +196,7 @@ Job parse_manifest_line(const std::string& line, long line_number) {
   return job;
 }
 
-long process_manifest(const fs::path& manifest, long max_events, bool verbose,
-                      bool flat_final_state) {
+long process_manifest(const fs::path& manifest, long max_events, bool verbose) {
   std::ifstream input(manifest);
   if (!input) {
     throw std::runtime_error("Could not open manifest: " + manifest.string());
@@ -237,8 +210,7 @@ long process_manifest(const fs::path& manifest, long max_events, bool verbose,
       continue;
     }
     ++jobs;
-    total_written += process_job(
-        parse_manifest_line(line, jobs), max_events, verbose, flat_final_state);
+    total_written += process_job(parse_manifest_line(line, jobs), max_events, verbose);
   }
   if (jobs == 0) {
     throw std::runtime_error("Manifest contains no jobs: " + manifest.string());
@@ -252,11 +224,9 @@ int main(int argc, char** argv) {
     const Args args = parse_args(argc, argv);
 
     if (!args.manifest.empty()) {
-      process_manifest(args.manifest, args.max_events, args.verbose, args.flat_final_state);
+      process_manifest(args.manifest, args.max_events, args.verbose);
     } else {
-      process_job(
-          {args.input, args.output, args.seed}, args.max_events, args.verbose,
-          args.flat_final_state);
+      process_job({args.input, args.output, args.seed}, args.max_events, args.verbose);
     }
     return 0;
   } catch (const std::exception& err) {

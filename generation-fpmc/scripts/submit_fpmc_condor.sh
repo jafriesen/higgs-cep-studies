@@ -14,7 +14,8 @@ usage() {
   cat <<'USAGE'
 Usage:
   submit_fpmc_condor.sh --process PROCESS --campaign CAMPAIGN
-    [--nev-per-job EVENTS] [--jobs N] [--overwrite] [--dry-run]
+    [--nev-per-job EVENTS] [--jobs N] [--hadr Y|N]
+    [--overwrite] [--dry-run]
 USAGE
   exit 1
 }
@@ -31,6 +32,7 @@ PROCESS=""
 CAMPAIGN=""
 JOBS=100
 NEV_PER_JOB=2000
+HADR="Y"
 OVERWRITE=false
 DRY_RUN=false
 
@@ -40,6 +42,7 @@ while [[ $# -gt 0 ]]; do
     --campaign) CAMPAIGN="$2"; shift 2 ;;
     --jobs) JOBS="$2"; shift 2 ;;
     --nev-per-job) NEV_PER_JOB="$2"; shift 2 ;;
+    --hadr) HADR="${2^^}"; shift 2 ;;
     --overwrite) OVERWRITE=true; shift ;;
     --dry-run) DRY_RUN=true; shift ;;
     -h|--help) usage ;;
@@ -55,6 +58,10 @@ done
 }
 [[ "$NEV_PER_JOB" =~ ^[0-9]+$ ]] && (( NEV_PER_JOB > 0 )) || {
   echo "ERROR: --nev-per-job must be a positive integer." >&2
+  exit 1
+}
+[[ "$HADR" == "Y" || "$HADR" == "N" ]] || {
+  echo "ERROR: --hadr must be Y or N." >&2
   exit 1
 }
 
@@ -79,6 +86,21 @@ done
   echo "ERROR: FPMC runtime data not found: $FPMC_EXTERNAL" >&2
   exit 1
 }
+
+EXISTING_HADR=""
+if [[ -f "$METADATA_FILE" ]]; then
+  EXISTING_HADR="$(
+    python3 -c 'import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(data.get("hadr", "")).upper())' "$METADATA_FILE"
+  )"
+fi
+if [[ -n "$EXISTING_HADR" && "$EXISTING_HADR" != "$HADR" &&
+      "$OVERWRITE" != true ]]; then
+  echo "ERROR: campaign metadata records HADR $EXISTING_HADR, requested $HADR." >&2
+  echo "Use --overwrite to replace this campaign's FPMC generation outputs." >&2
+  exit 1
+fi
 
 if [[ -d "$CONDOR_DIR" && "$OVERWRITE" != true ]]; then
   echo "ERROR: submit destination already exists: $CONDOR_DIR" >&2
@@ -119,6 +141,7 @@ exec $(printf '%q' "$RUN_SCRIPT") \
   --process $(printf '%q' "$PROCESS") \
   --campaign $(printf '%q' "$CAMPAIGN") \
   --nev "$NEV_PER_JOB" \
+  --hadr "$HADR" \
   --job "\$JOB_INDEX"
 EOF
 chmod +x "$JOB_SCRIPT"
@@ -133,6 +156,7 @@ python3 "$METADATA_WRITER" \
   --field "jobs=$JOBS" \
   --field "events_per_job=$NEV_PER_JOB" \
   --field "seed_start=33799" \
+  --string-field "hadr=$HADR" \
   --field "dry_run=$DRY_RUN" \
   --field "overwrite=$OVERWRITE" \
   --string-field "command=${COMMAND% }" \

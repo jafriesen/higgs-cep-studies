@@ -36,13 +36,11 @@ export HIGGS_CEP_SETUP_STRICT=1
 echo "+ source $STUDY_DIR/setup_env.sh"
 source "$STUDY_DIR/setup_env.sh"
 
-if ! run_cmd python3 -c "import pythia8mc" >/dev/null 2>&1; then
-  echo "ERROR: Python module 'pythia8mc' is not available after environment setup." >&2
+if ! run_cmd python3 -c "import pythia8" >/dev/null 2>&1; then
+  echo "ERROR: Python module 'pythia8' is not available after environment setup." >&2
   echo "Check CMSSW runtime and SCRAM_ARCH on the worker node." >&2
   exit 1
 fi
-
-unset PYTHIA8DATA
 
 JOB_INDEX=""
 TOTAL_BX=""

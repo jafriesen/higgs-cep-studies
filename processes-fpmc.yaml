@@ -1,91 +1,282 @@
+H:
+  process_code: 19999
+  typint: QCD
+  jet_type: b
+  default_campaign:
+    main: H_HadrN__v01
+    parton-pythia: H__v01
+    hadr-pythia: H_FSR__v01
+    sim-delphes: H_FSR__v01
+  campaigns:
+    H_HadrN__v01:
+      parton-pythia:
+        - H__v01
+      hadr-pythia:
+        - H_FSR__v01
+      sim-delphes:
+        - H_FSR__v01
+    H__v01:
+      sim-delphes:
+        - H__v01
+
 Hbb:
   process_code: 19905
   typint: QCD
   jet_type: b
-  yjmin: -6.0
-  yjmax: 6.0
-  ptmin: 4.0
-  hmass: 125.0
   default_campaign:
-    main: Hbb__test
+    main: Hbb_HadrN__v01
+    parton-pythia: Hbb__v01
+    hadr-pythia: Hbb_FSR__v01
+    sim-delphes: Hbb_FSR__v01
   campaigns:
-    Hbb__test:
-      hadronize: true
-    Hbb_parton:
-      hadronize: false
+    Hbb_HadrN__v01:
+      parton-pythia:
+        - Hbb__v01
+      hadr-pythia:
+        - Hbb_noFSR__v01
+        - Hbb_FSR__v01
+      sim-delphes:
+        - Hbb_noFSR__v01
+        - Hbb_FSR__v01
+    Hbb__v01:
+      sim-delphes:
+        - Hbb__v01
 
 Hcc:
   process_code: 19904
   typint: QCD
   jet_type: c
-  yjmin: -6.0
-  yjmax: 6.0
-  ptmin: 4.0
-  hmass: 125.0
   default_campaign:
-    main: Hcc__test
+    main: Hcc_HadrN__v01
+    parton-pythia: Hcc__v01
+    hadr-pythia: Hcc_FSR__v01
+    sim-delphes: Hcc_FSR__v01
   campaigns:
-    Hcc__test:
-      hadronize: true
-    Hcc_parton:
-      hadronize: false
+    Hcc_HadrN__v01:
+      parton-pythia:
+        - Hcc__v01
+      hadr-pythia:
+        - Hcc_noFSR__v01
+        - Hcc_FSR__v01
+      sim-delphes:
+        - Hcc_noFSR__v01
+        - Hcc_FSR__v01
+    Hcc__v01:
+      sim-delphes:
+        - Hcc__v01
+
+QCDqq:
+  process_code: 16011
+  typint: QCD
+  jet_type: q
+  default_campaign:
+    main: QCDqq_HadrN__v01
+    hadr-pythia: QCDqq_FSR__v01
+    sim-delphes: QCDqq_FSR__v01
+  campaigns:
+    QCDqq_HadrN__v01:
+      hadr-pythia:
+        - QCDqq_noFSR__v01
+        - QCDqq_FSR__v01
+      sim-delphes:
+        - QCDqq_noFSR__v01
+        - QCDqq_FSR__v01
+    QCDqq__v01:
+      sim-delphes:
+        - QCDqq__v01
+
+QCDggqq:
+  process_code: 16013
+  typint: QCD
+  jet_type: q
+  default_campaign:
+    main: QCDggqq_HadrN__v01
+    hadr-pythia: QCDggqq_FSR__v01
+    sim-delphes: QCDggqq_FSR__v01
+  campaigns:
+    QCDggqq_HadrN__v01:
+      hadr-pythia:
+        - QCDggqq_noFSR__v01
+        - QCDggqq_FSR__v01
+      sim-delphes:
+        - QCDggqq_noFSR__v01
+        - QCDggqq_FSR__v01
+    QCDggqq__v01:
+      sim-delphes:
+        - QCDggqq__v01
 
 QCDbb:
   process_code: 16005
   typint: QCD
   jet_type: b
-  yjmin: -6.0
-  yjmax: 6.0
-  ptmin: 4.0
   default_campaign:
-    main: QCDbb__test
+    main: QCDbb_HadrN__v01
+    hadr-pythia: QCDbb_FSR__v01
+    sim-delphes: QCDbb_FSR__v01
   campaigns:
-    QCDbb__test:
-      hadronize: true
-    QCDbb_parton:
-      hadronize: false
+    QCDbb_HadrN__v01:
+      hadr-pythia:
+        - QCDbb_noFSR__v01
+        - QCDbb_FSR__v01
+      sim-delphes:
+        - QCDbb_noFSR__v01
+        - QCDbb_FSR__v01
+    QCDbb__v01:
+      sim-delphes:
+        - QCDbb__v01
 
 QCDcc:
   process_code: 16004
   typint: QCD
   jet_type: c
-  yjmin: -6.0
-  yjmax: 6.0
-  ptmin: 4.0
   default_campaign:
-    main: QCDcc__test
+    main: QCDcc_HadrN__v01
+    hadr-pythia: QCDcc_FSR__v01
+    sim-delphes: QCDcc_FSR__v01
   campaigns:
-    QCDcc__test:
-      hadronize: true
-    QCDcc_parton:
-      hadronize: false
+    QCDcc_HadrN__v01:
+      hadr-pythia:
+        - QCDcc_noFSR__v01
+        - QCDcc_FSR__v01
+      sim-delphes:
+        - QCDcc_noFSR__v01
+        - QCDcc_FSR__v01
+    QCDcc__v01:
+      sim-delphes:
+        - QCDcc__v01
 
 QEDbb:
   process_code: 16005
   typint: QED
   jet_type: b
-  yjmin: -6.0
-  yjmax: 6.0
-  ptmin: 4.0
   default_campaign:
-    main: QEDbb__test
+    main: QEDbb_HadrN__v01
+    hadr-pythia: QEDbb_FSR__v01
+    sim-delphes: QEDbb_FSR__v01
   campaigns:
-    QEDbb__test:
-      hadronize: true
-    QEDbb_parton:
-      hadronize: false
+    QEDbb_HadrN__v01:
+      hadr-pythia:
+        - QEDbb_noFSR__v01
+        - QEDbb_FSR__v01
+      sim-delphes:
+        - QEDbb_noFSR__v01
+        - QEDbb_FSR__v01
+    QEDbb__v01:
+      sim-delphes:
+        - QEDbb__v01
 
 QEDcc:
   process_code: 16004
   typint: QED
   jet_type: c
+  default_campaign:
+    main: QEDcc_HadrN__v01
+    hadr-pythia: QEDcc_FSR__v01
+    sim-delphes: QEDcc_FSR__v01
+  campaigns:
+    QEDcc_HadrN__v01:
+      hadr-pythia:
+        - QEDcc_noFSR__v01
+        - QEDcc_FSR__v01
+      sim-delphes:
+        - QEDcc_noFSR__v01
+        - QEDcc_FSR__v01
+    QEDcc__v01:
+      sim-delphes:
+        - QEDcc__v01
+
+DPEjj:
+  process_code: 11500
+  typint: QCD
+  typepr: INC
+  nflux: 9
+  ifit: 100
+  isoftm: 1
   yjmin: -6.0
   yjmax: 6.0
-  ptmin: 4.0
+  ptmin: 15.0
+  ywwmin: 0.002
+  ywwmax: 0.2
+  jet_type: inclusive
+
+DPEjjHiggsPPS:
+  process_code: 11500
+  typint: QCD
+  typepr: INC
+  nflux: 9
+  ifit: 100
+  isoftm: 1
+  yjmin: -6.0
+  yjmax: 6.0
+  ptmin: 15.0
+  ywwmin: 0.00325
+  ywwmax: 0.0263
+  jet_type: inclusive
   default_campaign:
-    main: QEDcc__test
+    main: DPEjjHadrY_eval__v01
+    hadr-pythia: DPEjj_Herwig__v01
+    sim-delphes: DPEjj_Herwig_200PU_MTD__v01
   campaigns:
-    QEDcc__test:
-      hadronize: true
-    QEDcc_parton:
-      hadronize: false
+    DPEjjHadrY_eval__v01:
+      hadr-pythia:
+        - DPEjj_Herwig__v01
+      sim-delphes:
+        - DPEjj_Herwig_200PU_MTD__v01
+
+DPEbbHiggsPPS:
+  process_code: 11705
+  typint: QCD
+  typepr: INC
+  nflux: 9
+  ifit: 100
+  isoftm: 1
+  yjmin: -6.0
+  yjmax: 6.0
+  ptmin: 15.0
+  ywwmin: 0.00325
+  ywwmax: 0.0263
+  jet_type: b
+  default_campaign:
+    main: DPEbbHadrY_genpilot__v01
+    hadr-pythia: DPEbb_Herwig__v01
+    sim-delphes: DPEbb_Herwig_200PU_MTD__v01
+  campaigns:
+    DPEbbHadrY_genpilot__v01:
+      hadr-pythia:
+        - DPEbb_Herwig__v01
+      sim-delphes:
+        - DPEbb_Herwig_200PU_MTD__v01
+    DPEbbHadrY_eval__v02:
+      hadr-pythia:
+        - DPEbb_Herwig__v02
+      sim-delphes:
+        - DPEbb_Herwig_200PU_MTD__v02
+
+DPEccHiggsPPS:
+  process_code: 11704
+  typint: QCD
+  typepr: INC
+  nflux: 9
+  ifit: 100
+  isoftm: 1
+  yjmin: -6.0
+  yjmax: 6.0
+  ptmin: 15.0
+  ywwmin: 0.00325
+  ywwmax: 0.0263
+  jet_type: c
+  default_campaign:
+    main: DPEccHadrY_genpilot__v01
+    hadr-pythia: DPEcc_Herwig__v01
+    sim-delphes: DPEcc_Herwig_200PU_MTD__v01
+  campaigns:
+    DPEccHadrY_genpilot__v01:
+      hadr-pythia:
+        - DPEcc_Herwig__v01
+      sim-delphes:
+        - DPEcc_Herwig_200PU_MTD__v01
+    DPEccHadrY_eval__v02:
+      hadr-pythia:
+        - DPEcc_Herwig__v02
+      sim-delphes:
+        - DPEcc_Herwig_200PU_MTD__v02

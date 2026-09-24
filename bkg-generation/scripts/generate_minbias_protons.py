@@ -28,7 +28,7 @@ Later, you can:
 import argparse
 import math
 import numpy as np
-import pythia8mc as pythia8
+import pythia8
 
 
 def configure_pythia(e_cm=14000.0, processes="SoftQCD:all", seed=None):

@@ -33,6 +33,10 @@ Campaign names are required but may be absent from the configuration.
 `--card FILE` selects another complete SuperChic card as the template; the
 same five tagged fields are still replaced. Initialization is reused when its
 energy, survival model, input tag, PDF name, and PDF member match.
+`--survival-model {1,2,3,4}` overrides `[isurv]` for both initialization and
+generation. `--no-soft-survival` writes `[sfaci] = .false.` and skips the
+initialized screening-input requirement. Without these flags, the template
+defaults are used.
 
 With `--job N`, the default seed is `1001 + N - 1`.
 
@@ -51,6 +55,7 @@ Defaults are 100 jobs, 2000 events per job, 2048 MB, one CPU, and at most 50
 idle jobs. Workers run from Condor scratch using the shared repository,
 SuperChic installation, and initialized inputs, so `/isilon` and CVMFS must
 be available on worker nodes. `--card FILE` is also supported for batch jobs.
+`--survival-model` and `--no-soft-survival` are passed through to worker jobs.
 `--dry-run` builds the worker and Condor files without submitting.
 `--overwrite` clears non-initialization generation outputs and preserves
 initialized inputs.

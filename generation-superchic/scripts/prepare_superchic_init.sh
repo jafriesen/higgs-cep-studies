@@ -6,7 +6,7 @@ usage() {
   cat <<'USAGE'
 Usage:
   prepare_superchic_init.sh --process PROCESS --campaign CAMPAIGN
-    [--card DAT_FILE]
+    [--card DAT_FILE] [--survival-model MODEL] [--no-soft-survival]
 USAGE
   exit 1
 }
@@ -20,12 +20,16 @@ DEFAULT_CARD="$STUDY_DIR/generation-superchic/cards/template.DAT"
 PROCESS=""
 CAMPAIGN=""
 CARD=""
+SURVIVAL_MODEL=""
+NO_SOFT_SURVIVAL=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --process) PROCESS="$2"; shift 2 ;;
     --campaign) CAMPAIGN="$2"; shift 2 ;;
     --card) CARD="$2"; shift 2 ;;
+    --survival-model) SURVIVAL_MODEL="$2"; shift 2 ;;
+    --no-soft-survival) NO_SOFT_SURVIVAL=true; shift ;;
     -h|--help) usage ;;
     *) echo "ERROR: unknown argument: $1" >&2; usage ;;
   esac
@@ -33,6 +37,11 @@ done
 
 [[ -n "$PROCESS" ]] || { echo "ERROR: --process is required." >&2; usage; }
 [[ -n "$CAMPAIGN" ]] || { echo "ERROR: --campaign is required." >&2; usage; }
+if [[ -n "$SURVIVAL_MODEL" ]] &&
+   { ! [[ "$SURVIVAL_MODEL" =~ ^[1-4]$ ]]; }; then
+  echo "ERROR: --survival-model must be one of 1, 2, 3, or 4." >&2
+  exit 1
+fi
 CARD="${CARD:-$DEFAULT_CARD}"
 [[ "$CARD" == /* ]] || CARD="$STUDY_DIR/$CARD"
 [[ -f "$CARD" ]] || { echo "ERROR: card not found: $CARD" >&2; exit 1; }
@@ -58,6 +67,11 @@ log_step "Process: $PROCESS"
 log_step "Campaign: $CAMPAIGN"
 log_step "Generation dir: $GENERATION_ROOT"
 log_step "Using card template: $CARD"
+[[ -n "$SURVIVAL_MODEL" ]] && log_step "Survival model override: $SURVIVAL_MODEL"
+if [[ "$NO_SOFT_SURVIVAL" == true ]]; then
+  log_step "Soft survival effects disabled; initialized inputs are not needed"
+  exit 0
+fi
 
 SUPERCHIC_INIT=""
 for candidate in \
@@ -95,9 +109,12 @@ fi
 
 mkdir -p "$RUN_DIR/Cards" "$RUN_DIR/inputs"
 cp -f "$RUNTIME_CARDS_DIR"/* "$RUN_DIR/Cards/"
+CARD_ARGS=()
+[[ -n "$SURVIVAL_MODEL" ]] && CARD_ARGS+=(--survival-model "$SURVIVAL_MODEL")
 python3 "$CARD_GENERATOR" \
   --template "$CARD" --process "$PROCESS" --nev 1 --seed 1 \
-  --out-tag "${CAMPAIGN}_init" --output "$INIT_CARD"
+  --out-tag "${CAMPAIGN}_init" --output "$INIT_CARD" \
+  "${CARD_ARGS[@]}"
 cp -f "$INIT_CARD" "$RUN_DIR/job.DAT"
 
 INIT_RTS=$(awk '/\[rts\]/ {print $1; exit}' "$INIT_CARD")

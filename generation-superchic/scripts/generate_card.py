@@ -10,7 +10,17 @@ sys.path.insert(0, str(ROOT))
 from common.path_helper import generation_process_config  # noqa: E402
 
 
-def render_card(template, process, events, seed, output_tag):
+def render_card(
+    template,
+    process,
+    events,
+    seed,
+    output_tag,
+    survival_model=None,
+    no_soft_survival=False,
+    mass_min=None,
+    mass_max=None,
+):
     if events <= 0:
         raise RuntimeError("events must be a positive integer")
     if seed <= 0:
@@ -33,10 +43,20 @@ def render_card(template, process, events, seed, output_tag):
         "iseed": str(seed),
         "nev": str(events),
     }
+    if survival_model is not None:
+        replacements["isurv"] = str(survival_model)
+    if no_soft_survival:
+        replacements["sfaci"] = ".false."
+    if mass_min is not None:
+        replacements["mmin"] = f"{mass_min:g}d0"
+    if mass_max is not None:
+        replacements["mmax"] = f"{mass_max:g}d0"
+
     counts = {name: 0 for name in replacements}
+    tags = "|".join(re.escape(name) for name in replacements)
     lines = []
     for line in Path(template).read_text(encoding="utf-8").splitlines():
-        match = re.search(r"!\s*\[(intag|proc|outtg|iseed|nev)\]", line)
+        match = re.search(rf"!\s*\[({tags})\]", line)
         if match:
             name = match.group(1)
             line = f"{replacements[name]}          {line[match.start():]}"
@@ -57,11 +77,23 @@ def main():
     parser.add_argument("--nev", type=int, required=True)
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--out-tag", required=True)
+    parser.add_argument("--survival-model", type=int, choices=range(1, 5), default=None)
+    parser.add_argument("--no-soft-survival", action="store_true")
+    parser.add_argument("--mass-min", type=float, default=None)
+    parser.add_argument("--mass-max", type=float, default=None)
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
 
     card = render_card(
-        args.template, args.process, args.nev, args.seed, args.out_tag
+        args.template,
+        args.process,
+        args.nev,
+        args.seed,
+        args.out_tag,
+        args.survival_model,
+        args.no_soft_survival,
+        args.mass_min,
+        args.mass_max,
     )
     if args.output is None:
         print(card, end="")

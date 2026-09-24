@@ -2,86 +2,165 @@ Hbb:
   process_code: 1
   intag: in140_Hbb
   jet_type: b
-  xsec_fb: 5.9
   weight: 1.0
   default_campaign:
-    main: Hbb__test
+    main: Hbb__v01
+    hadr-pythia: Hbb_noFSR__v01
+    sim-delphes: Hbb_noFSR_200PU__v01
   campaigns:
-    Hbb__test: {}
+    Hbb__v01:
+      hadr-pythia:
+        - Hbb_FSR__v01
+        - Hbb_noFSR__v01
+      sim-delphes:
+        - Hbb_FSR__v01
+        - Hbb_FSR_delphes_card_CMS
+        - Hbb_noFSR__v01
+        - Hbb_FSR_200PU__v01
+        - Hbb_noFSR_200PU__v01
+        - Hbb_DPy8__v01
+        - Hbb_FSR_200PU_MTD35ps__v01
+        - Hbb_noFSR_200PU_MTD35ps__v01
+        - Hbb_FSR_PhaseI_50PU__v01
+        - Hbb_noFSR_PhaseI_50PU__v01
+        - Hbb_FSR_0PU_v04__v01
+        - Hbb_noFSR_0PU_v04__v01
+        - Hbb_FSR_200PU_AK8__v01
+        - Hbb_noFSR_200PU_AK8__v01
+        - Hbb_FSR_0PU_AK8__v01
+        - Hbb_noFSR_0PU_AK8__v01
+        - Hbb_FSR_200PU_MTD__v01
+        - Hbb_DPy8_FSR_200PU_MTD__v01
 
 Hcc:
   process_code: 85
   intag: in140_Hcc
   jet_type: c
-  xsec_fb: 0.29
   weight: 1.0
   default_campaign:
-    main: Hcc__test
+    main: Hcc__v01
+    hadr-pythia: Hcc_noFSR__v01
+    sim-delphes: Hcc_DPy8_noFSR_200PU__v01
   campaigns:
-    Hcc__test: {}
+    Hcc__v01:
+      hadr-pythia:
+        - Hcc_noFSR__v01
+      sim-delphes:
+        - Hcc_DPy8_noFSR_200PU__v01
+        - Hcc_DPy8_FSR_200PU_MTD__v01
 
 QCDbb:
   process_code: 6
   intag: in140_QCDbb
   jet_type: b
-  xsec_fb: 1650
   weight: 1.0
   default_campaign:
-    main: QCDbb__test
+    main: QCDbb__v01
+    hadr-pythia: QCDbb_noFSR__v01
+    sim-delphes: QCDbb_noFSR_200PU__v01
   campaigns:
-    QCDbb__test: {}
+    QCDbb__v01:
+      hadr-pythia:
+        - QCDbb_FSR__v01
+        - QCDbb_noFSR__v01
+      sim-delphes:
+        - QCDbb_FSR__v01
+        - QCDbb_noFSR__v01
+        - QCDbb_FSR_200PU__v01
+        - QCDbb_noFSR_200PU__v01
+        - QCDbb_DPy8_FSR_200PU__v01
+        - QCDbb_FSR_200PU_MTD__v01
+        - QCDbb_DPy8_FSR_200PU_MTD__v01
 
 QCDcc:
   process_code: 5
   intag: in140_QCDcc
   jet_type: c
-  xsec_fb: 337
   weight: 1.0
   default_campaign:
-    main: QCDcc__test
+    main: QCDcc__v01
+    hadr-pythia: QCDcc_noFSR__v01
+    sim-delphes: QCDcc_DPy8_noFSR_200PU__v01
   campaigns:
-    QCDcc__test: {}
+    QCDcc__v01:
+      hadr-pythia:
+        - QCDcc_noFSR__v01
+      sim-delphes:
+        - QCDcc_DPy8_noFSR_200PU__v01
+        - QCDcc_DPy8_FSR_200PU_MTD__v01
 
 QEDbb:
   process_code: 63
   intag: in140_QEDbb
   jet_type: b
-  xsec_fb: 2.85
   weight: 1.0
   default_campaign:
-    main: QEDbb__test
+    main: QEDbb__v01
+    hadr-pythia: QEDbb_noFSR__v01
+    sim-delphes: QEDbb_DPy8_noFSR_200PU__v01
   campaigns:
-    QEDbb__test: {}
+    QEDbb__v01:
+      hadr-pythia:
+        - QEDbb_noFSR__v01
+      sim-delphes:
+        - QEDbb_DPy8_noFSR_200PU__v01
+        - QEDbb_DPy8_FSR_200PU_MTD__v01
 
 QEDcc:
   process_code: 62
   intag: in140_QEDcc
   jet_type: c
-  xsec_fb: 48.9
   weight: 1.0
   default_campaign:
-    main: QEDcc__test
+    main: QEDcc__v01
+    hadr-pythia: QEDcc_noFSR__v01
+    sim-delphes: QEDcc_DPy8_noFSR_200PU__v01
   campaigns:
-    QEDcc__test: {}
+    QEDcc__v01:
+      hadr-pythia:
+        - QEDcc_noFSR__v01
+      sim-delphes:
+        - QEDcc_DPy8_noFSR_200PU__v01
+        - QEDcc_DPy8_FSR_200PU_MTD__v01
 
 QCDqq:
   process_code: 4
   intag: in140_QCDqq
   jet_type: q
-  xsec_fb: 93
   weight: 1.0
   default_campaign:
-    main: QCDqq__test
+    main: QCDqq__v01
   campaigns:
-    QCDqq__test: {}
+    QCDqq__v01: {}
 
 QCDgg:
   process_code: 3
   intag: in140_QCDgg
   jet_type: g
-  xsec_fb: 10326000
   weight: 1.0
   default_campaign:
-    main: QCDgg__test
+    main: QCDgg__v03
+    hadr-pythia: QCDgg_FSR__v03
+    sim-delphes: QCDgg_DPy8_FSR_200PU_MTD__v03
   campaigns:
-    QCDgg__test: {}
+    QCDgg__v01:
+      hadr-pythia:
+        - QCDgg_FSR__v01
+        - QCDgg_noFSR__v01
+      sim-delphes:
+        - QCDgg_FSR__v01
+        - QCDgg_noFSR__v01
+    QCDgg__v02:
+      hadr-pythia:
+        - QCDgg_FSR__v02
+      sim-delphes:
+        - QCDgg_DPy8_FSR_200PU_MTD__v02
+    QCDgg__v03:
+      hadr-pythia:
+        - QCDgg_FSR__v03
+      sim-delphes:
+        - QCDgg_DPy8_FSR_200PU_MTD__v03
+    # Dedicated high-statistics mistag sample with 110 < M_X < 140 GeV.
+    QCDgg__v04:
+      sim-delphes:
+        - QCDgg_DPy8_FSR_200PU_MTD__v04

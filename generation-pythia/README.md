@@ -15,6 +15,8 @@ Background generation is split into two pieces:
 - `scripts/quick_check_minbias.py` - quick quantile sanity plots.
 - `scripts/process_superchic.cc` - hadronize SuperChic LHE/evrec files with Pythia8 and write HepMC3.
 - `scripts/process_superchic.py` - run Pythia for SuperChic campaigns listed in `processes.yaml` (compiles `process_superchic.cc` as needed).
+- `scripts/process_madgraph.cc` - shower and hadronize MadGraph LHE files with Pythia8 and write HepMC3.
+- `scripts/process_madgraph.py` - run Pythia for MadGraph campaigns listed in `processes-madgraph.yaml` (compiles `process_madgraph.cc` as needed).
 
 ## Setup
 
@@ -65,3 +67,11 @@ To run every process default campaign from `processes.yaml`:
 
 Outputs are written to `<campaign>/Pythia/<tag>/<process>_<tag>.hepmc`, where `<tag>` defaults to the campaign name (override with `--tag`).
 If a process entry in `processes.yaml` defines `max_files`, that file limit is used unless `--max-files` is passed.
+
+## Run MadGraph events through Pythia8
+
+```bash
+generation-pythia/scripts/process_madgraph.py --process QCDbb --campaign QCDbb__v01 --max-events 100
+```
+
+`process_madgraph.cc` reads MadGraph LHE files, runs Pythia with ISR, FSR, MPI, beam remnants, and hadronization enabled, and writes HepMC3 ASCII output for Delphes. Outputs are written to `output-madgraph/<process>/<campaign>/hadr-Pythia/<tag>/<process>_<tag>_<index>.hepmc`, where `<tag>` defaults to the campaign name.
