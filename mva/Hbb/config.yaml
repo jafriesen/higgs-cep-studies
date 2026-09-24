@@ -226,12 +226,15 @@ components:
     fsr_state: FSR
     source_sample: QCDbb_superchic
     correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  # Photon exchange acts at large impact parameter, so its soft survival is near
+  # one and does not follow the QCD survival factor: held fixed in survival scans,
+  # as QEDcc is in the H(cc) config.
   - name: QEDbb_fsr
     generator: superchic
     process: QEDbb
     source_flavor: bb
     signal: false
-    survival_scaled: true
+    survival_scaled: false
     real_protons: true
     sim_subcampaign: QEDbb_DPy8_FSR_200PU_MTD__v01
     fsr_state: FSR
@@ -265,6 +268,44 @@ components:
     sim_subcampaign: QCDbb_DPy8_FSR_200PU_MTD__{campaign}
     fsr_state: FSR
     source_sample: QCDbb_madgraph_{campaign}
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  # Charm backgrounds entering through the c->b mistag, same samples and per-sample
+  # maps as the H(cc) channel's QCDcc_superchic_fsr, QEDcc_superchic_fsr and
+  # QCDcc_madgraph_fsr.
+  - name: QCDcc_fsr
+    generator: superchic
+    process: QCDcc
+    source_flavor: cc
+    signal: false
+    survival_scaled: true
+    real_protons: true
+    sim_subcampaign: QCDcc_DPy8_FSR_200PU_MTD__v01
+    fsr_state: FSR
+    source_sample: QCDcc_superchic
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  - name: QEDcc_fsr
+    generator: superchic
+    process: QEDcc
+    source_flavor: cc
+    signal: false
+    survival_scaled: false
+    real_protons: true
+    sim_subcampaign: QEDcc_DPy8_FSR_200PU_MTD__v01
+    fsr_state: FSR
+    source_sample: QEDcc
+    correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
+  - name: QCDcc_madgraph_fsr
+    generator: madgraph
+    process: QCDcc
+    source_flavor: cc
+    signal: false
+    survival_scaled: false
+    real_protons: false
+    campaigns: [QCDcc__v02, QCDcc__v03, QCDcc__v04, QCDcc__v05, QCDcc__v06, QCDcc__v07]
+    campaign_combination: disjoint
+    sim_subcampaign: QCDcc_DPy8_FSR_200PU_MTD__{campaign}
+    fsr_state: FSR
+    source_sample: QCDcc_madgraph_{campaign}
     correction_map: jet-energy/output/fsr_mtd_recovered/corrections.yaml
 
 profiles:
@@ -301,6 +342,24 @@ profiles:
       QCDgg_fsr: exclusive_QCDgg
       QEDbb_fsr: exclusive_QEDbb
       QCDbb_madgraph_fsr: nonexclusive_QCDbb
+    proton_backend: analytic
+    jets: leading
+    corrections: true
+    max_abs_jet_eta: 3.0
+    track_min_pt_gev: 0.5
+  fsr_mtd_eight_class_gg_cc:
+    feature_set: new_list_mass_estimator
+    components: [Hbb_fsr, QCDbb_fsr, QCDgg_fsr, QEDbb_fsr, QCDcc_fsr, QEDcc_fsr,
+                 QCDbb_madgraph_fsr, QCDcc_madgraph_fsr]
+    class_map:
+      Hbb_fsr: Hbb
+      QCDbb_fsr: exclusive_QCDbb
+      QCDgg_fsr: exclusive_QCDgg
+      QEDbb_fsr: exclusive_QEDbb
+      QCDcc_fsr: exclusive_QCDcc
+      QEDcc_fsr: exclusive_QEDcc
+      QCDbb_madgraph_fsr: nonexclusive_QCDbb
+      QCDcc_madgraph_fsr: nonexclusive_QCDcc
     proton_backend: analytic
     jets: leading
     corrections: true

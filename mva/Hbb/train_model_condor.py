@@ -466,6 +466,7 @@ def merge(args):
                     "nominal_mass": np.asarray(payload["nominal_mass"]),
                     "probability_histograms": np.asarray(payload["probability_histograms"]),
                     "mg_above_squared": np.asarray(payload["mg_above_squared"]),
+                    "mg_base_above_squared": np.asarray(payload["mg_base_above_squared"]),
                     "tail_rows": np.asarray(payload["tail_rows"]),
                     "tail_event_yields": np.asarray(payload["tail_event_yields"]),
                     "tail_signal_yields": np.asarray(payload["tail_signal_yields"]),

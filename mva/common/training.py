@@ -819,6 +819,7 @@ def evaluate_fold(state, model, calibrator, args, fold, auxiliary_fit=None):
         np.linspace(0, args.score_bins - 1, args.scan_points).astype(int)
     )
     mg_above_squared = np.zeros(scan_bins.size)
+    mg_base_above_squared = np.zeros(args.score_bins)
     tail_efficiencies = np.asarray(
         getattr(args, "tail_signal_efficiencies", TAIL_SIGNAL_EFFICIENCIES),
         dtype=np.float64,
@@ -917,6 +918,14 @@ def evaluate_fold(state, model, calibrator, args, fold, auxiliary_fit=None):
                 weights=base_contribution.ravel(),
                 minlength=args.score_bins,
             )
+            per_event_base = np.zeros((selected.size, args.score_bins), dtype=np.float64)
+            np.add.at(
+                per_event_base,
+                (np.repeat(np.arange(selected.size), args.grid_cells), base_bucket.ravel()),
+                base_contribution.ravel(),
+            )
+            base_above = np.cumsum(per_event_base[:, ::-1], axis=1)[:, ::-1]
+            mg_base_above_squared += np.sum(base_above**2, axis=0)
             per_event_bucket = np.zeros(
                 (selected.size, args.score_bins), dtype=np.float64
             )
@@ -969,6 +978,7 @@ def evaluate_fold(state, model, calibrator, args, fold, auxiliary_fit=None):
         "nominal_mass": nominal_mass,
         "probability_histograms": probability_histograms,
         "mg_above_squared": mg_above_squared,
+        "mg_base_above_squared": mg_base_above_squared,
         "tail_rows": np.concatenate(tail_rows),
         "tail_event_yields": np.concatenate(tail_event_yields),
         "tail_signal_yields": tail_signal_yields,
@@ -1004,6 +1014,9 @@ def finish_evaluation(
     )
     mg_above_squared = np.sum(
         [item["mg_above_squared"] for item in partials], axis=0
+    )
+    mg_base_above_squared = np.sum(
+        [item["mg_base_above_squared"] for item in partials], axis=0
     )
     tail_rows = np.concatenate([item["tail_rows"] for item in partials])
     tail_event_yields = np.concatenate(
@@ -1255,6 +1268,8 @@ def finish_evaluation(
         support_floor=np.asarray(args.support_floor),
         operating_index=np.asarray(operating),
         preselection_mass=nominal_mass.sum(axis=1),
+        base_mass=base_mass,
+        madgraph_base_above_squared=mg_base_above_squared,
         selected_mass=scan_component_mass[operating],
         category_mass=category_mass,
         category_low=category_low,
@@ -1432,6 +1447,7 @@ def train_and_evaluate(data_dir, result_dir, args):
     )
     scan_bins = np.unique(np.linspace(0, args.score_bins - 1, args.scan_points).astype(int))
     mg_above_squared = np.zeros(scan_bins.size)
+    mg_base_above_squared = np.zeros(args.score_bins)
 
     for fold, (model, calibrator) in enumerate(fits):
         for component_id, component in enumerate(components):
@@ -1511,6 +1527,14 @@ def train_and_evaluate(data_dir, result_dir, args):
                 base_score_yield += np.bincount(
                     base_bucket.ravel(), weights=base_contribution.ravel(), minlength=args.score_bins
                 )
+                per_event_base = np.zeros((selected.size, args.score_bins), dtype=np.float64)
+                np.add.at(
+                    per_event_base,
+                    (np.repeat(np.arange(selected.size), args.grid_cells), base_bucket.ravel()),
+                    base_contribution.ravel(),
+                )
+                base_above = np.cumsum(per_event_base[:, ::-1], axis=1)[:, ::-1]
+                mg_base_above_squared += np.sum(base_above**2, axis=0)
                 per_event_bucket = np.zeros((selected.size, args.score_bins), dtype=np.float64)
                 for vertex_probability, shift in zip(
                     *_vertex_terms(vertex, component["vertex_hypothesis"])
@@ -1661,6 +1685,8 @@ def train_and_evaluate(data_dir, result_dir, args):
         support_floor=np.asarray(args.support_floor),
         operating_index=np.asarray(operating),
         preselection_mass=nominal_mass.sum(axis=1),
+        base_mass=base_mass,
+        madgraph_base_above_squared=mg_base_above_squared,
         selected_mass=scan_component_mass[operating],
         category_mass=category_mass,
         category_low=category_low,
