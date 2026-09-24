@@ -26,9 +26,17 @@ Avoid:
 
 ## Layout
 
-- `signal-generation/`: SuperChic signal production scripts/templates.
-- `bkg-generation/`: background and min-bias production scripts.
-- `analysis/`: analysis, plotting, and rate-estimate scripts.
+- `generation-superchic/`, `generation-madgraph/`, `generation-fpmc/`: event generation
+  (central exclusive signal and backgrounds, inclusive MadGraph slices, FPMC comparisons).
+- `generation-pythia/`, `sim/`: showering/hadronisation and Delphes simulation
+  (cards in `sim/Cards/`, production card `CMS_PhaseII_200PU_v04_trim_MTD35ps.tcl`).
+- `bkg-generation/`, `minbias/`: minimum-bias proton library and vertex model.
+- `trigger/`: bunch-crossing trigger-rate studies (minimum-bias and dijet+PPS).
+- `jet-energy/`, `common/jet_calibration.py`: FSR-recovered jet calibration maps.
+- `mva/`: the current MVA framework (`common/`, `Hbb/`, `Hcc/`); `analysis/MVA*` are
+  earlier frameworks kept for reference.
+- `analysis/`: exploratory studies (e.g. `fsr_studies/`); `paper-plots/`: paper figures.
+- `STATUS.md`: current state of the analysis and open items -- read it first.
 
 Keep changes in the relevant area. Do not move code across areas unless requested.
 
@@ -51,6 +59,11 @@ Prefer the smallest check that exercises the change.
 For Python scripts:
 - run `python3 -m py_compile path/to/script.py`
 - when possible, run the script on a small local input or existing example file
+
+For the MVA framework, run the tests from the repository root with
+`PYTHONPATH=$PWD:$PYTHONPATH python3 -m pytest -q --import-mode=importlib mva/tests`.
+Plain `pytest` puts `mva/` on the path, where `mva/common` shadows the top-level
+`common` package and collection fails.
 
 For shell scripts:
 - run `bash -n path/to/script.sh`
