@@ -12,7 +12,12 @@ generation-superchic/output/*
 bkg-generation/output/*
 bkg-generation/logs/*
 output/*
+output-fpmc/*
+output-madgraph/*
 generation-superchic/workspace/*
+generation-madgraph/workspace/*
+jet-energy/output/
+jet-energy/cache/
 
 # Ignore output files
 *.root
@@ -33,3 +38,19 @@ generation-superchic/workspace/*
 *.err
 *.npz
 *.sub
+
+# Datasets, training results and job directories: regenerable, tens of GB.
+# Paper numbers are traced to these through the ledger in the paper repo.
+*.npy
+output/
+output-superchic/
+mva/*/data/
+mva/*/results/
+mva/*/condor/
+analysis/MVA*/data/
+analysis/MVA*/results/
+paper-plots/data/
+sim/condor/
+generation-pythia/condor/
+.pytest_cache/
+.ruff_cache/
