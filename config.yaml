@@ -6,11 +6,25 @@ generation:
     processes: processes-superchic.yaml
     output_dir: output-superchic/
     generation_dir: gen-SuperChic
+    stage_dirs:
+      hadr-pythia: hadr-Pythia
+      sim-delphes: sim-Delphes
   fpmc:
     processes: processes-fpmc.yaml
     output_dir: output-fpmc/
     generation_dir: gen-FPMC
+    stage_dirs:
+      parton-pythia: parton-Pythia
+      hadr-pythia: hadr-Pythia
+      sim-delphes: sim-Delphes
+  madgraph:
+    processes: processes-madgraph.yaml
+    output_dir: output-madgraph/
+    generation_dir: gen-MadGraph
+    stage_dirs:
+      hadr-pythia: hadr-Pythia
+      sim-delphes: sim-Delphes
 minbias:
-  default_campaign: minbias__test
+  default_campaign: minbias
 sim:
-  delphes-card: "sim/Cards/CMS_PhaseII_0PU_v02.tcl"
+  delphes-card: "sim/Cards/CMS_PhaseII_200PU_v04.tcl"

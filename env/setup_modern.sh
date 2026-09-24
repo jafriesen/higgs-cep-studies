@@ -11,7 +11,7 @@ _higgs_cep_modern_main() {
     return 1
   fi
 
-  export LCG_VIEW="${LCG_VIEW:-/cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc12-opt/setup.sh}"
+  export LCG_VIEW="${LCG_VIEW:-/cvmfs/sft.cern.ch/lcg/views/LCG_110/x86_64-el9-gcc13-opt/setup.sh}"
   if [[ "${HIGGS_CEP_MODERN_ENV_LOADED:-}" == "$LCG_VIEW" ]]; then
     return 0
   fi
