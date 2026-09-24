@@ -1,0 +1,94 @@
+datasets:
+  - sample: Hbb
+    fsr_state: FSR
+    input_glob: output-superchic/Hbb/Hbb__v01/sim-Delphes/Hbb_FSR_200PU__v01/root/*.root
+    match_selection: hard_flavor
+    truth_pid_abs: 5
+    derivation_files: 3
+    validation_files: 3
+    closure_mode: dijet
+  - sample: Hbb
+    fsr_state: noFSR
+    input_glob: output-superchic/Hbb/Hbb__v01/sim-Delphes/Hbb_noFSR_200PU__v01/root/*.root
+    match_selection: hard_flavor
+    truth_pid_abs: 5
+    derivation_files: 3
+    validation_files: 3
+    closure_mode: dijet
+  - sample: QCDbb
+    fsr_state: FSR
+    input_glob: output-madgraph/QCDbb/QCDbb__v01/sim-Delphes/QCDbb_DPy8_FSR_200PU__v01/root/*.root
+    match_selection: hard_flavor
+    truth_pid_abs: 5
+    derivation_files: 3
+    validation_files: 3
+    closure_mode: dijet
+  - sample: QCDbb
+    fsr_state: noFSR
+    input_glob: output-madgraph/QCDbb/QCDbb__v01/sim-Delphes/QCDbb_DPy8_noFSR_200PU__v01/root/*.root
+    match_selection: hard_flavor
+    truth_pid_abs: 5
+    derivation_files: 3
+    validation_files: 3
+    closure_mode: dijet
+  - sample: QCDbb_superchic
+    fsr_state: FSR
+    input_glob: output-superchic/QCDbb/QCDbb__v01/sim-Delphes/QCDbb_FSR_200PU__v01/root/*.root
+    match_selection: hard_flavor
+    truth_pid_abs: 5
+    derivation_files: 20
+    validation_files: 10
+    closure_mode: dijet
+  - sample: QCDbb_superchic
+    fsr_state: noFSR
+    input_glob: output-superchic/QCDbb/QCDbb__v01/sim-Delphes/QCDbb_noFSR_200PU__v01/root/*.root
+    match_selection: hard_flavor
+    truth_pid_abs: 5
+    derivation_files: 20
+    validation_files: 10
+    closure_mode: dijet
+  - sample: Hcc
+    fsr_state: noFSR
+    input_glob: output-superchic/Hcc/Hcc__v01/sim-Delphes/Hcc_DPy8_noFSR_200PU__v01/root/*.root
+    match_selection: hard_flavor
+    truth_pid_abs: 4
+    derivation_files: 20
+    validation_files: 10
+    closure_mode: dijet
+  - sample: QCDcc_superchic
+    fsr_state: noFSR
+    input_glob: output-superchic/QCDcc/QCDcc__v01/sim-Delphes/QCDcc_DPy8_noFSR_200PU__v01/root/*.root
+    match_selection: hard_flavor
+    truth_pid_abs: 4
+    derivation_files: 20
+    validation_files: 10
+    closure_mode: dijet
+  - sample: QEDcc_superchic
+    fsr_state: noFSR
+    input_glob: output-superchic/QEDcc/QEDcc__v01/sim-Delphes/QEDcc_DPy8_noFSR_200PU__v01/root/*.root
+    match_selection: hard_flavor
+    truth_pid_abs: 4
+    derivation_files: 20
+    validation_files: 10
+    closure_mode: dijet
+  - sample: QCDcc_madgraph
+    fsr_state: noFSR
+    input_globs:
+      - output-madgraph/QCDcc/QCDcc__v02/sim-Delphes/QCDcc_DPy8_noFSR_200PU__v02/root/*.root
+      - output-madgraph/QCDcc/QCDcc__v03/sim-Delphes/QCDcc_DPy8_noFSR_200PU__v03/root/*.root
+      - output-madgraph/QCDcc/QCDcc__v04/sim-Delphes/QCDcc_DPy8_noFSR_200PU__v04/root/*.root
+      - output-madgraph/QCDcc/QCDcc__v05/sim-Delphes/QCDcc_DPy8_noFSR_200PU__v05/root/*.root
+      - output-madgraph/QCDcc/QCDcc__v06/sim-Delphes/QCDcc_DPy8_noFSR_200PU__v06/root/*.root
+      - output-madgraph/QCDcc/QCDcc__v07/sim-Delphes/QCDcc_DPy8_noFSR_200PU__v07/root/*.root
+    match_selection: hard_flavor
+    truth_pid_abs: 4
+    derivation_files: 6
+    validation_files: 6
+    closure_mode: dijet
+  - sample: HardQCD
+    fsr_state: FSR
+    input_glob: output/trigger/hardqcd_pthat10_150k_v1/shards/job_*/delphes.root
+    match_selection: inclusive
+    derivation_files: 10
+    validation_files: 20
+    closure_mode: single_jet

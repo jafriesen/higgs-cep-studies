@@ -1,0 +1,5 @@
+resolutions:
+  - {eta_min: 0.0, eta_max: 1.3, a: 0.073, b: 12.322}
+  - {eta_min: 1.3, eta_max: 1.7, a: 0.247, b: 6.061}
+  - {eta_min: 1.7, eta_max: 2.5, a: 0.128, b: 10.944}
+  - {eta_min: 2.5, eta_max: 3.0, a: 0.091, b: 12.660}

@@ -100,13 +100,71 @@ def generation_campaign_config(generator, process, campaign=None):
     return campaign_name, campaigns.get(campaign_name) or {}
 
 
-def generation_env(generator, process, campaign):
+def generation_campaign_root(generator, process, campaign=None):
     generator_cfg = generation_config(generator)
     campaign_name, _ = generation_campaign_config(generator, process, campaign)
     output_root = resolve_template_path(
         generator_cfg["output_dir"], _config(), base=repo_root()
     )
-    campaign_root_path = output_root / process / campaign_name
+    return output_root / process / campaign_name
+
+
+def generation_stage_root(
+    generator, process, campaign, stage, subcampaign=None
+):
+    generator_cfg = generation_config(generator)
+    stage_dirs = generator_cfg.get("stage_dirs") or {}
+    if stage not in stage_dirs:
+        known = ", ".join(sorted(stage_dirs))
+        raise RuntimeError(
+            f"Unknown {generator} stage '{stage}'. Known stages: {known}"
+        )
+
+    process_cfg = generation_process_config(generator, process)
+    campaigns = process_cfg.get("campaigns") or {}
+    campaign_name, campaign_cfg = generation_campaign_config(
+        generator, process, campaign
+    )
+    if campaign_name not in campaigns:
+        known = ", ".join(sorted(campaigns))
+        raise RuntimeError(
+            f"Campaign '{campaign_name}' has no configured downstream "
+            f"relationships. Known campaigns: {known}"
+        )
+
+    allowed = campaign_cfg.get(stage) or []
+    if subcampaign is None:
+        defaults = process_cfg.get("default_campaign") or {}
+        default_subcampaign = (
+            defaults.get(stage) if isinstance(defaults, dict) else None
+        )
+        if default_subcampaign in allowed:
+            subcampaign = default_subcampaign
+    if not subcampaign:
+        raise RuntimeError(
+            f"No default {stage} subcampaign for {process}/{campaign_name}; "
+            "specify --subcampaign"
+        )
+
+    if subcampaign not in allowed:
+        known = ", ".join(allowed)
+        raise RuntimeError(
+            f"Unknown {stage} subcampaign '{subcampaign}' for "
+            f"{process}/{campaign_name}. Known subcampaigns: {known}"
+        )
+    return (
+        generation_campaign_root(generator, process, campaign_name)
+        / stage_dirs[stage]
+        / subcampaign
+    )
+
+
+def generation_env(generator, process, campaign):
+    generator_cfg = generation_config(generator)
+    campaign_name, _ = generation_campaign_config(generator, process, campaign)
+    campaign_root_path = generation_campaign_root(
+        generator, process, campaign_name
+    )
     generation_root_path = campaign_root_path / generator_cfg["generation_dir"]
     return {
         "GENERATOR": generator,
@@ -232,13 +290,20 @@ def main():
     parser = argparse.ArgumentParser(description="Resolve campaign output paths.")
     parser.add_argument(
         "target",
-        choices=sorted([*_path_commands(), "generation-env", "superchic-env"]),
+        choices=sorted(
+            [
+                *_path_commands(),
+                "generation-env",
+                "generation-stage-root",
+                "superchic-env",
+            ]
+        ),
         help="Path or shell-assignment group to print.",
     )
     parser.add_argument(
         "--generator",
         default=None,
-        help="Generator name for generation-env.",
+        help="Generator name for generation-env or generation-stage-root.",
     )
     parser.add_argument(
         "--process", required=True, help="Process name from the applicable process config."
@@ -247,6 +312,16 @@ def main():
         "--campaign",
         default=None,
         help="Main campaign name. Defaults to the process default_campaign.",
+    )
+    parser.add_argument(
+        "--stage",
+        default=None,
+        help="Downstream stage name for generation-stage-root.",
+    )
+    parser.add_argument(
+        "--subcampaign",
+        default=None,
+        help="Downstream subcampaign; defaults from the process config.",
     )
     parser.add_argument(
         "--output-dir",
@@ -264,6 +339,24 @@ def main():
             parser.error("--output-dir is not supported for generation-env")
         _print_shell_assignments(
             generation_env(args.generator, args.process, args.campaign)
+        )
+        return
+
+    if args.target == "generation-stage-root":
+        if not args.generator:
+            parser.error("--generator is required for generation-stage-root")
+        if not args.stage:
+            parser.error("--stage is required for generation-stage-root")
+        if args.output_dir:
+            parser.error("--output-dir is not supported for generation-stage-root")
+        print(
+            generation_stage_root(
+                args.generator,
+                args.process,
+                args.campaign,
+                args.stage,
+                args.subcampaign,
+            )
         )
         return
 

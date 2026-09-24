@@ -13,7 +13,8 @@ def main():
     parser.add_argument("--executable", type=Path, required=True)
     parser.add_argument("--payload", type=Path, default=None)
     parser.add_argument("--jobs", type=int, required=True)
-    parser.add_argument("--request-memory", type=int, default=2048)
+    parser.add_argument("--job-offset", type=int, default=0)
+    parser.add_argument("--request-memory", type=int, default=8192)
     parser.add_argument("--request-cpus", type=int, default=1)
     parser.add_argument("--max-idle", type=int, default=50)
     parser.add_argument("--dry-run", action="store_true")
@@ -21,6 +22,8 @@ def main():
 
     if args.jobs <= 0:
         parser.error("--jobs must be a positive integer")
+    if args.job_offset < 0:
+        parser.error("--job-offset must not be negative")
     if not args.executable.is_file():
         parser.error(f"executable not found: {args.executable}")
     if args.payload is not None and not args.payload.is_file():
@@ -30,7 +33,10 @@ def main():
     queue_file = args.condor_dir / "queue_items.txt"
     submit_file = args.condor_dir / "submit.sub"
     queue_file.write_text(
-        "".join(f"{job}\n" for job in range(1, args.jobs + 1)),
+        "".join(
+            f"{job}\n"
+            for job in range(1 + args.job_offset, args.jobs + 1 + args.job_offset)
+        ),
         encoding="utf-8",
     )
     lines = [
