@@ -75,7 +75,7 @@ def ensure_delphes_python_runtime():
 
     lcg_view = Path(os.environ.get(
         "DELPHES_LCG_VIEW",
-        "/cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc12-opt/setup.sh",
+        "/cvmfs/sft.cern.ch/lcg/views/LCG_110/x86_64-el9-gcc13-opt/setup.sh",
     ))
     delphes_dir = Path(os.environ.get("DELPHES_DIR", "/home/jfriesen/Delphes"))
 

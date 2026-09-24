@@ -157,7 +157,7 @@ module PileUpMerger PileUpMerger {
   set PileUpFile MinBias.pileup
   
   # average expected pile up
-  set MeanPileUp 200
+  set MeanPileUp 0
 
   # maximum spread in the beam direction in m
   set ZVertexSpread 0.25
@@ -955,7 +955,7 @@ module FastJetFinder GenJetFinderAK8 {
   set JetAlgorithm 6
   set ParameterR 0.8
 
-  set JetPTMin 200.0
+  set JetPTMin 20.0
 }
 
 #########################
@@ -1044,7 +1044,7 @@ module FastJetFinder FastJetFinderAK8 {
   set SymmetryCutSoftDrop 0.1
   set R0SoftDrop 0.8
 
-  set JetPTMin 200.0
+  set JetPTMin 20.0
 }
 
 ###########################
@@ -1114,7 +1114,7 @@ module FastJetFinder FastJetFinderPUPPIAK8 {
   set SymmetryCutSoftDrop 0.1
   set R0SoftDrop 0.8
 
-  set JetPTMin 200.0
+  set JetPTMin 20.0
 }
 
 ##################

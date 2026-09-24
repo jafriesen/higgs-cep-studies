@@ -1,0 +1,23 @@
+! Hadronize SuperChic LHE/evrec events inside DelphesPythia8 (no shower).
+! Mirrors configure_pythia() in generation-pythia/scripts/process_superchic.cc.
+! The runner appends per-input settings: Beams:LHEF, Random:setSeed/seed,
+! Main:numberOfEvents, Main:timesAllowErrors.
+Beams:frameType = 4
+
+PartonLevel:ISR = off
+PartonLevel:MPI = off
+PartonLevel:Remnants = off
+PartonLevel:FSR = on
+
+HadronLevel:all = on
+
+LesHouches:matchInOut = off
+Check:event = off
+
+Next:numberShowInfo = 0
+Next:numberShowProcess = 0
+Next:numberShowEvent = 0
+Print:quiet = on
+Init:showProcesses = off
+Init:showChangedSettings = off
+Init:showChangedParticleData = off

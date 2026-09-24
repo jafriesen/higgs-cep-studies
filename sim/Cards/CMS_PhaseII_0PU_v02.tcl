@@ -89,6 +89,7 @@ set ExecutionPath {
   GenPileUpMissingET
 
   GenJetFinder
+  GenJetFinderAK6
   GenJetFinderAK8
   FastJetFinder
   FastJetFinderAK8
@@ -909,6 +910,18 @@ module FastJetFinder GenJetFinder {
   # algorithm: 1 CDFJetClu, 2 MidPoint, 3 SIScone, 4 kt, 5 Cambridge/Aachen, 6 antikt
   set JetAlgorithm 6
   set ParameterR 0.4
+
+  set JetPTMin 5.0
+}
+
+module FastJetFinder GenJetFinderAK6 {
+  set InputArray NeutrinoFilter/filteredParticles
+
+  set OutputArray jetsAK6
+
+  # algorithm: 1 CDFJetClu, 2 MidPoint, 3 SIScone, 4 kt, 5 Cambridge/Aachen, 6 antikt
+  set JetAlgorithm 6
+  set ParameterR 0.6
 
   set JetPTMin 5.0
 }
@@ -2719,6 +2732,7 @@ module TreeWriter TreeWriter {
   add Branch PileUpMerger/vertices Vertex Vertex
 
   add Branch GenJetFinder/jets GenJet Jet
+  add Branch GenJetFinderAK6/jetsAK6 GenJetAK6 Jet
   add Branch GenJetFinderAK8/jetsAK8 GenJetAK8 Jet
   add Branch GenMissingET/momentum GenMissingET MissingET
 

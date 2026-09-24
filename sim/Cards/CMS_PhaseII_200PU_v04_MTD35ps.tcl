@@ -719,6 +719,11 @@ module TrackPileUpSubtractor TrackPileUpSubtractor {
      (pt >= 10. ) * ( ( 0.2 ) * (10^(0.5*abs(eta) + 1.5)) * 1e-06 )
      
      }
+
+  # MIP timing detector model: constant per-track time resolution in s.
+  set TVertexResolution {35E-12}
+  set PVTimeResolution 20E-12
+  set TimeSigmaCut 3.0
  }
 
 ########################

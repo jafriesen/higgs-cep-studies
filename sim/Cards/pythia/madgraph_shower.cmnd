@@ -1,0 +1,20 @@
+! Shower and hadronize MadGraph LHE events inside DelphesPythia8.
+! Mirrors configure_pythia() in generation-pythia/scripts/process_madgraph.cc.
+! The runner appends per-input settings: Beams:LHEF, Random:setSeed/seed,
+! Main:numberOfEvents, Main:timesAllowErrors.
+Beams:frameType = 4
+
+PartonLevel:MPI = on
+PartonLevel:ISR = on
+PartonLevel:Remnants = on
+PartonLevel:FSR = on
+
+HadronLevel:all = on
+
+Next:numberShowInfo = 0
+Next:numberShowProcess = 0
+Next:numberShowEvent = 0
+Print:quiet = on
+Init:showProcesses = off
+Init:showChangedSettings = off
+Init:showChangedParticleData = off
