@@ -12,38 +12,30 @@ FEATURE_NAMES = (
     "jet1_eta",
     "jet2_eta",
     "delta_r_jj",
+    "delta_phi_jj",
+    "delta_eta_jj",
     "dijet_pt",
     "dijet_eta",
+    "jet_multiplicity",
+    "track_multiplicity_r_gt_0p4_pt1",
+    "dijet_mass",
+    "mx_minus_dijet_mass",
+    "yx_minus_dijet_rapidity",
 )
 PROCESS_ORDER = (
-    "qcd_gg",
-    "qcd_qq",
-    "qcd_bb",
-    "qcd_cc",
-    "qed_bb",
-    "qed_cc",
-    "h_bb",
-    "h_cc",
+    "Hbb",
+    "QCDbb",
+    "QCDbb_madgraph_comb",
 )
 PROCESS_LABELS = {
-    "qcd_gg": "QCD gg",
-    "qcd_qq": "QCD qq",
-    "qcd_bb": "QCD bb",
-    "qcd_cc": "QCD cc",
-    "qed_bb": "QED bb",
-    "qed_cc": "QED cc",
-    "h_bb": "H->bb",
-    "h_cc": "H->cc",
+    "Hbb": "H->bb",
+    "QCDbb": "SuperChic QCDbb",
+    "QCDbb_madgraph_comb": "MadGraph QCDbb + min-bias protons",
 }
 COLORS = {
-    "h_bb": "#0072B2",
-    "h_cc": "#D55E00",
-    "qed_bb": "#009E73",
-    "qed_cc": "#CC79A7",
-    "qcd_bb": "#E69F00",
-    "qcd_cc": "#56B4E9",
-    "qcd_qq": "#000000",
-    "qcd_gg": "#F0E442",
+    "Hbb": "#0072B2",
+    "QCDbb": "#E69F00",
+    "QCDbb_madgraph_comb": "#D55E00",
 }
 
 
@@ -56,7 +48,7 @@ def parse_args():
         "--output-dir",
         dest="input_dir",
         required=True,
-        help="Directory containing dataset.npz, splits.npz, scores.npz, and model.json.",
+        help="Directory containing dataset.npz, scores.npz, and model.json.",
     )
     return parser.parse_args()
 
@@ -89,46 +81,69 @@ def normalized_class_weights(np, labels, weights):
     return normalized
 
 
-def plot_validation_score(
+def logit_scores(np, scores):
+    clipped = np.clip(np.asarray(scores, dtype=np.float64), 1e-9, 1.0 - 1e-9)
+    return np.log(clipped / (1.0 - clipped))
+
+
+def binned_significance(np, values, labels, weights, bins):
+    signal_counts, _ = np.histogram(
+        values[labels == 1], bins=bins, weights=weights[labels == 1]
+    )
+    background_counts, _ = np.histogram(
+        values[labels == 0], bins=bins, weights=weights[labels == 0]
+    )
+    denominator = signal_counts + background_counts
+    z_bins = np.zeros_like(signal_counts, dtype=np.float64)
+    nonzero = denominator > 0.0
+    z_bins[nonzero] = signal_counts[nonzero] / np.sqrt(denominator[nonzero])
+    return float(np.sqrt(np.sum(z_bins * z_bins)))
+
+
+def plot_oof_score(
     np,
     plt,
     output_path,
-    val_scores,
-    val_labels,
-    val_weights,
-    train_scores,
-    train_labels,
-    train_weights,
+    oof_scores,
+    train_final_scores,
+    labels,
+    weights,
+    logit_x=False,
 ):
     fig, ax = plt.subplots(figsize=(7.0, 5.0))
-    bins = np.linspace(0.0, 1.0, 41)
-    normalized_val = normalized_class_weights(np, val_labels, val_weights)
-    normalized_train = normalized_class_weights(np, train_labels, train_weights)
+    if logit_x:
+        oof_scores = logit_scores(np, oof_scores)
+        train_final_scores = logit_scores(np, train_final_scores)
+        low = float(min(oof_scores.min(), train_final_scores.min()))
+        high = float(max(oof_scores.max(), train_final_scores.max()))
+        bins = np.linspace(low, high, 100)
+    else:
+        bins = np.linspace(0.0, 1.0, 100)
+    normalized = normalized_class_weights(np, labels, weights)
     for label, text, color in ((0, "Background", "#D55E00"), (1, "Signal", "#0072B2")):
-        mask = val_labels == label
+        mask = labels == label
         ax.hist(
-            val_scores[mask],
+            oof_scores[mask],
             bins=bins,
-            weights=normalized_val[mask],
+            weights=normalized[mask],
             histtype="step",
             linewidth=1.5,
             color=color,
-            label=f"{text} validation",
+            label=f"{text} out-of-fold",
         )
-        train_mask = train_labels == label
         ax.hist(
-            train_scores[train_mask],
+            train_final_scores[mask],
             bins=bins,
-            weights=normalized_train[train_mask],
+            weights=normalized[mask],
             histtype="step",
             linewidth=1.5,
             linestyle="--",
             color=color,
-            label=f"{text} train",
+            label=f"{text} final model on train",
         )
-    ax.set_xlabel("XGBoost score")
+    ax.set_xlabel("logit(XGBoost score)" if logit_x else "XGBoost score")
     ax.set_ylabel("Normalized events / bin")
-    ax.set_xlim(0.0, 1.0)
+    ax.set_xlim(float(bins[0]), float(bins[-1]))
     ax.grid(True, alpha=0.3)
     ax.legend()
     fig.tight_layout()
@@ -151,12 +166,17 @@ def plot_roc(plt, output_path, fpr, tpr, roc_auc):
     plt.close(fig)
 
 
-def plot_feature_importance(np, plt, output_path, model):
+def plot_feature_importance(np, plt, output_path, model, feature_names):
     importances = np.asarray(model.feature_importances_, dtype=np.float64)
+    if len(feature_names) != importances.shape[0]:
+        raise RuntimeError(
+            f"Feature-name count {len(feature_names)} does not match model importance count "
+            f"{importances.shape[0]}"
+        )
     order = np.argsort(importances)
     fig, ax = plt.subplots(figsize=(7.0, 5.0))
-    ax.barh(np.arange(len(FEATURE_NAMES)), importances[order], color="#009E73")
-    ax.set_yticks(np.arange(len(FEATURE_NAMES)), [FEATURE_NAMES[index] for index in order])
+    ax.barh(np.arange(len(feature_names)), importances[order], color="#009E73")
+    ax.set_yticks(np.arange(len(feature_names)), [feature_names[index] for index in order])
     ax.set_xlabel("XGBoost feature importance")
     ax.grid(True, axis="x", alpha=0.3)
     fig.tight_layout()
@@ -164,9 +184,14 @@ def plot_feature_importance(np, plt, output_path, model):
     plt.close(fig)
 
 
-def plot_tmva_score(np, plt, output_path, scores, labels, weights, processes, log_y=False):
+def plot_tmva_score(np, plt, output_path, scores, labels, weights, processes, log_y=False, logit_x=False):
     fig, ax = plt.subplots(figsize=(7.0, 5.0))
-    bins = np.linspace(0.0, 1.0, 41)
+    if logit_x:
+        scores = logit_scores(np, scores)
+        bins = np.linspace(float(scores.min()), float(scores.max()), 100)
+    else:
+        bins = np.linspace(0.5, 1.0, 100)
+    significance = binned_significance(np, scores, labels, weights, bins)
     positive_counts = []
     for process_name in PROCESS_ORDER:
         mask = processes == process_name
@@ -184,15 +209,18 @@ def plot_tmva_score(np, plt, output_path, scores, labels, weights, processes, lo
             label=f"{PROCESS_LABELS.get(process_name, process_name)} ({np.sum(weights[mask]):.3g})",
         )
         positive_counts.extend(counts[counts > 0.0])
-    ax.set_xlabel("XGBoost score")
+    ax.set_xlabel("logit(XGBoost score)" if logit_x else "XGBoost score")
     ax.set_ylabel("Expected events / bin")
-    ax.set_xlim(0.0, 1.0)
+    ax.set_xlim(bins[0], bins[-1])
     if log_y:
         ax.set_yscale("log")
         if positive_counts:
             ax.set_ylim(bottom=float(np.min(positive_counts)) * 0.5)
     ax.grid(True, alpha=0.3)
-    ax.legend(fontsize=8)
+    handles, legend_labels = ax.get_legend_handles_labels()
+    handles.append(plt.Line2D([], [], color="none"))
+    legend_labels.append(f"Binned MVA Z = {significance:.3g}")
+    ax.legend(handles, legend_labels, fontsize=8)
     fig.tight_layout()
     fig.savefig(output_path, dpi=160)
     plt.close(fig)
@@ -200,42 +228,63 @@ def plot_tmva_score(np, plt, output_path, scores, labels, weights, processes, lo
 
 def write_plots(np, plt, XGBClassifier, input_dir):
     dataset = load_required_npz(np, input_dir / "dataset.npz")
-    splits = load_required_npz(np, input_dir / "splits.npz")
     scores = load_required_npz(np, input_dir / "scores.npz")
     model_path = input_dir / "model.json"
     if not model_path.is_file():
         raise RuntimeError(f"Missing required input: {model_path}")
 
     model = XGBClassifier()
+    model._estimator_type = "classifier"
     model.load_model(model_path)
+    model.n_classes_ = 2
 
-    train_idx = splits["train"]
-    val_idx = splits["validation"]
     labels = dataset["y"]
     weights = dataset["physical_weight"]
     processes = dataset["process"]
+    if "training_feature_names" in dataset.files:
+        feature_names = tuple(str(name) for name in dataset["training_feature_names"])
+    elif "feature_names" in dataset.files:
+        feature_names = tuple(str(name) for name in dataset["feature_names"])
+    else:
+        feature_names = FEATURE_NAMES
     all_scores = scores["all"] if "all" in scores.files else model.predict_proba(dataset["x"])[:, 1]
+    train_final = (
+        scores["train_final"]
+        if "train_final" in scores.files
+        else model.predict_proba(dataset["x"])[:, 1]
+    )
 
     outputs = {
-        "validation_score": input_dir / "validation_score.png",
+        "oof_score": input_dir / "oof_score.png",
+        "oof_score_logit": input_dir / "oof_score_logit.png",
         "roc": input_dir / "roc.png",
         "feature_importance": input_dir / "feature_importance.png",
         "tmva_score": input_dir / "tmva_score.png",
         "tmva_score_log": input_dir / "tmva_score_log.png",
+        "tmva_score_logit": input_dir / "tmva_score_logit.png",
+        "tmva_score_logit_log": input_dir / "tmva_score_logit_log.png",
     }
-    plot_validation_score(
+    plot_oof_score(
         np,
         plt,
-        outputs["validation_score"],
-        scores["validation"],
-        labels[val_idx],
-        weights[val_idx],
-        scores["train"],
-        labels[train_idx],
-        weights[train_idx],
+        outputs["oof_score"],
+        all_scores,
+        train_final,
+        labels,
+        weights,
+    )
+    plot_oof_score(
+        np,
+        plt,
+        outputs["oof_score_logit"],
+        all_scores,
+        train_final,
+        labels,
+        weights,
+        logit_x=True,
     )
     plot_roc(plt, outputs["roc"], scores["fpr"], scores["tpr"], float(scores["roc_auc"]))
-    plot_feature_importance(np, plt, outputs["feature_importance"], model)
+    plot_feature_importance(np, plt, outputs["feature_importance"], model, feature_names)
     plot_tmva_score(
         np,
         plt,
@@ -254,6 +303,27 @@ def write_plots(np, plt, XGBClassifier, input_dir):
         weights,
         processes,
         log_y=True,
+    )
+    plot_tmva_score(
+        np,
+        plt,
+        outputs["tmva_score_logit"],
+        all_scores,
+        labels,
+        weights,
+        processes,
+        logit_x=True,
+    )
+    plot_tmva_score(
+        np,
+        plt,
+        outputs["tmva_score_logit_log"],
+        all_scores,
+        labels,
+        weights,
+        processes,
+        log_y=True,
+        logit_x=True,
     )
     return outputs
 

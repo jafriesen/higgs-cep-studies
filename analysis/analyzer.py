@@ -18,7 +18,12 @@ ROOT = repo_root()
 sys.path.insert(0, str(ROOT))
 
 from common.config_utils import load_yaml, natural_key, resolve_path  # noqa: E402
-from common.path_helper import campaign_config, delphes_root, pythia_root  # noqa: E402
+from common.path_helper import generation_campaign_config, generation_process_config, generation_stage_root  # noqa: E402
+from analysis.cross_sections import (  # noqa: E402
+    generator_cross_section_fb,
+    generator_weight,
+    process_flavor_from_generator,
+)
 
 
 def ensure_analysis_runtime(script_path, argv):
@@ -61,6 +66,13 @@ def branch_name(collection, field):
 
 
 def process_flavor(process):
+    if "jet_type" in process:
+        if process["jet_type"] == "b":
+            return "bb"
+        if process["jet_type"] == "c":
+            return "cc"
+        return "light"
+
     jet_ids = [abs(int(pdg_id)) for pdg_id in process.get("jet_pdg_ids", [])]
     if any(pdg_id == 5 for pdg_id in jet_ids):
         return "bb"
@@ -124,9 +136,18 @@ def load_pps_config(path):
 
 
 def resolve_input_pairs(process_name, campaign_name):
-    campaign, _ = campaign_config(process_name, campaign_name)
-    delphes_dir = delphes_root(process_name, campaign)
-    pythia_dir = pythia_root(process_name, campaign)
+    campaign, _ = generation_campaign_config("superchic", process_name, campaign_name)
+    process_config = generation_process_config("superchic", process_name)
+    defaults = process_config.get("default_campaign") or {}
+    delphes_tag = defaults.get("sim-delphes") if isinstance(defaults, dict) else None
+    pythia_tag = defaults.get("hadr-pythia") if isinstance(defaults, dict) else None
+
+    delphes_dir = generation_stage_root(
+        "superchic", process_name, campaign, "sim-delphes", subcampaign=delphes_tag
+    ) / "root"
+    pythia_dir = generation_stage_root(
+        "superchic", process_name, campaign, "hadr-pythia", subcampaign=pythia_tag
+    ) / "hepmc"
 
     root_files = sorted(delphes_dir.glob("*.root"), key=natural_key)
     if not root_files:
@@ -240,6 +261,7 @@ def parse_hepmc_protons(np, input_file, selected_event_indices, sqrt_s):
 
     selected_positions = {int(event_index): index for index, event_index in enumerate(selected_event_indices)}
     last_selected = int(selected_event_indices[-1])
+    beam_energy = sqrt_s / 2.0
     left = np.full(selected_event_indices.shape, np.nan, dtype=np.float64)
     right = np.full(selected_event_indices.shape, np.nan, dtype=np.float64)
 
@@ -254,8 +276,6 @@ def parse_hepmc_protons(np, input_file, selected_event_indices, sqrt_s):
 
             output_index = selected_positions.get(event_index)
             if output_index is not None:
-                beam_pos = None
-                beam_neg = None
                 left_energy = None
                 left_abs_pz = -1.0
                 right_energy = None
@@ -267,12 +287,7 @@ def parse_hepmc_protons(np, input_file, selected_event_indices, sqrt_s):
                     pz = momentum.pz()
                     energy = momentum.e()
                     status = particle.status()
-                    if status == 4:
-                        if pz > 0.0:
-                            beam_pos = energy
-                        elif pz < 0.0:
-                            beam_neg = energy
-                    elif status == 1:
+                    if status == 1:
                         abs_pz = abs(pz)
                         if pz < 0.0 and abs_pz > left_abs_pz:
                             left_energy = energy
@@ -281,9 +296,9 @@ def parse_hepmc_protons(np, input_file, selected_event_indices, sqrt_s):
                             right_energy = energy
                             right_abs_pz = abs_pz
 
-                if beam_pos is not None and beam_neg is not None and left_energy is not None and right_energy is not None:
-                    left[output_index] = (beam_neg - left_energy) / beam_neg
-                    right[output_index] = (beam_pos - right_energy) / beam_pos
+                if left_energy is not None and right_energy is not None:
+                    left[output_index] = (beam_energy - left_energy) / beam_energy
+                    right[output_index] = (beam_energy - right_energy) / beam_energy
 
             event_index += 1
     finally:
@@ -445,8 +460,7 @@ def read_samples(ak, np, uproot, processes, parameters, pps_config, args, proces
     rng = np.random.default_rng(pps_config["seed"])
     workers = int(args.workers)
     for process_name in selected_processes(processes, process_order, args.include_light_qcd):
-        process = processes[process_name]
-        source_flavor = process_flavor(process)
+        source_flavor = process_flavor_from_generator("superchic", process_name)
         tag = tag_weight(parameters, args.flavor, source_flavor)
         try:
             campaign, pairs = resolve_input_pairs(process_name, args.campaign)
@@ -509,13 +523,18 @@ def read_samples(ak, np, uproot, processes, parameters, pps_config, args, proces
         if n_generated <= 0:
             raise RuntimeError(f"{process_name}_{campaign} has zero generated events")
 
-        event_weight = float(process["xsec_fb"]) * LUMI_FB * tag / float(n_generated)
+        xsec_fb, xsec_source = generator_cross_section_fb("superchic", process_name, campaign)
+        process_weight = generator_weight("superchic", process_name)
+        event_weight = xsec_fb * LUMI_FB * process_weight * tag / float(n_generated)
         samples.append(
             {
                 "name": process_name,
                 "campaign": campaign,
                 "observables": concatenate_observables(np, observable_sets),
                 "event_weight": event_weight,
+                "xsec_fb": xsec_fb,
+                "xsec_source": xsec_source,
+                "process_weight": process_weight,
                 "tag_weight": tag,
                 "n_generated": n_generated,
                 "n_selected": n_selected,
@@ -530,6 +549,7 @@ def read_samples(ak, np, uproot, processes, parameters, pps_config, args, proces
             f"{process_name}_{campaign}: files={n_files}, generated={n_generated}, "
             f"two_jet={n_selected}, proton_pairs={n_valid_pp}, pps%={pps_percent:.2f}%, "
             f"pps={n_pps}, smeared_valid={n_smeared_valid}, tag_weight={tag:.6g}, "
+            f"xsec={xsec_fb:.6g} fb ({xsec_source}), process_weight={process_weight:.6g}, "
             f"event_weight={event_weight:.6g}"
         )
 

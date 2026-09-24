@@ -1,0 +1,56 @@
+# -*- ThePEG-repository -*-
+# Shower SuperChic H->bb events with Herwig 7.
+#
+# The input LHE is written by make_hbb_rest_lhe.py: the intact CEP protons are
+# dropped and the event is boosted to the Higgs rest frame, so the hard process is
+# e+ e- -> h0 -> b bbar with the SuperChic b/bbar directions, colour flow and
+# 125 GeV shower start scale.  Herwig's e+e- machinery then gives exactly the
+# configuration the SuperChic Pythia card uses: FSR and hadronization only, with
+# no ISR, no MPI and no beam remnants.
+read snippets/EECollider.in
+
+cd /Herwig/EventHandlers
+set EventHandler:LuminosityFunction:Energy 125.0
+
+create ThePEG::Cuts /Herwig/Cuts/NoCuts
+
+library LesHouches.so
+create ThePEG::LesHouchesFileReader LHEReader
+set LHEReader:FileName @LHE@
+set LHEReader:MomentumTreatment RescaleEnergy
+set LHEReader:WeightWarnings false
+set LHEReader:InitPDFs 0
+set LHEReader:Cuts /Herwig/Cuts/NoCuts
+set LHEReader:BeamA /Herwig/Particles/e+
+set LHEReader:BeamB /Herwig/Particles/e-
+set LHEReader:EBeamA 62.5
+set LHEReader:EBeamB 62.5
+set LHEReader:PDFA /Herwig/Partons/NoPDF
+set LHEReader:PDFB /Herwig/Partons/NoPDF
+set LHEReader:PartonExtractor /Herwig/Partons/EEExtractor
+set LHEReader:MaxScan -1
+set LHEReader:CutEarly No
+
+create ThePEG::LesHouchesEventHandler LHEHandler
+set LHEHandler:PartonExtractor /Herwig/Partons/EEExtractor
+set LHEHandler:Cuts /Herwig/Cuts/NoCuts
+set LHEHandler:HadronizationHandler /Herwig/Hadronization/ClusterHadHandler
+set LHEHandler:DecayHandler /Herwig/Decays/DecayHandler
+insert LHEHandler:LesHouchesReaders 0 LHEReader
+set LHEHandler:WeightOption UnitWeight
+
+@CASCADE@
+
+cd /Herwig/Generators
+set EventGenerator:EventHandler /Herwig/EventHandlers/LHEHandler
+set EventGenerator:NumberOfEvents @EVENTS@
+set EventGenerator:RandomNumberGenerator:Seed @SEED@
+set EventGenerator:PrintEvent 1
+set EventGenerator:MaxErrors 10000
+
+read snippets/HepMC.in
+set /Herwig/Analysis/HepMC:PrintEvent 100000000
+set /Herwig/Analysis/HepMC:Format GenEventHepMC3
+set /Herwig/Analysis/HepMC:Filename @HEPMC@
+
+saverun @RUNNAME@ EventGenerator

@@ -9,8 +9,9 @@ from common.config_utils import resolve_minbias_campaign
 from common.path_helper import campaign_config, delphes_root
 
 
-MASS_RANGE = (100, 150)
+MASS_RANGE = (117, 133)
 MASS_BINS = MASS_RANGE[1] - MASS_RANGE[0]
+MINBIAS_BATCH_SIZE = 100_000
 
 PLOT_VARIABLES = {
     "random_mx_smeared_after_pps": {
@@ -220,159 +221,190 @@ def file_interactions(np, data, filename):
     return np.unique(keys, axis=0)
 
 
-def load_npz_minbias_file(np, filename, next_interaction_id):
+def compact_interaction_block(np, universe, bx_id, interaction_id, side, xi):
+    if universe.size == 0:
+        return {
+            "offsets": np.zeros(1, dtype=np.int64),
+            "side": np.empty(0, dtype=np.int8),
+            "xi": np.empty(0, dtype=np.float64),
+        }
+
+    original_order = np.arange(len(xi), dtype=np.int64)
+    order = np.lexsort((original_order, interaction_id, bx_id))
+    sorted_bx = np.asarray(bx_id, dtype=np.int64)[order]
+    sorted_interaction = np.asarray(interaction_id, dtype=np.int64)[order]
+
+    universe_keys = np.rec.fromarrays(
+        (universe[:, 0], universe[:, 1]), names=("bx", "interaction")
+    )
+    proton_keys = np.rec.fromarrays((sorted_bx, sorted_interaction), names=("bx", "interaction"))
+    positions = np.searchsorted(universe_keys, proton_keys)
+    if np.any(positions >= len(universe)) or np.any(universe_keys[positions] != proton_keys):
+        raise RuntimeError(
+            "Minbias proton references an interaction absent from the interaction universe"
+        )
+
+    counts = np.bincount(positions, minlength=len(universe))
+    offsets = np.empty(len(universe) + 1, dtype=np.int64)
+    offsets[0] = 0
+    np.cumsum(counts, out=offsets[1:])
+    return {
+        "offsets": offsets,
+        "side": np.asarray(side, dtype=np.int8)[order],
+        "xi": np.asarray(xi, dtype=np.float64)[order],
+    }
+
+
+def load_npz_interaction_block(np, filename):
     fields = ("bx_id", "interaction_id", "side", "xi")
-    parts = {field: [] for field in fields}
     with np.load(filename) as data:
         missing = [field for field in fields if field not in data.files]
         if missing:
             raise RuntimeError(f"Required arrays missing in {filename}: {', '.join(missing)}")
-        for field in fields:
-            parts[field].append(np.asarray(data[field]))
+        arrays = {field: np.asarray(data[field]) for field in fields}
         universe = file_interactions(np, data, filename)
-
-    protons = {field: np.concatenate(values) if values else np.empty(0) for field, values in parts.items()}
-    return protons, universe, next_interaction_id
+    return compact_interaction_block(np, universe, **arrays)
 
 
-def load_parquet_minbias_file(np, filename, next_interaction_id, sqrt_s):
+def parquet_interaction_block(np, event_id, pdg_id, is_final, pz, energy, sqrt_s):
+    if event_id.size == 0:
+        return None
+    if np.any(event_id[1:] < event_id[:-1]):
+        raise RuntimeError("Minbias Parquet event_id values must be ordered for streaming")
+
+    event_starts = np.r_[0, np.nonzero(event_id[1:] != event_id[:-1])[0] + 1]
+    event_numbers = np.searchsorted(event_starts, np.arange(event_id.size), side="right") - 1
+    beam_energy = float(sqrt_s) / 2.0
+    xi = (beam_energy - energy) / beam_energy
+    valid = (pdg_id == 2212) & is_final & (pz != 0.0) & np.isfinite(xi) & (xi > 0.0)
+    counts = np.bincount(event_numbers[valid], minlength=len(event_starts))
+    offsets = np.empty(len(event_starts) + 1, dtype=np.int64)
+    offsets[0] = 0
+    np.cumsum(counts, out=offsets[1:])
+    return {
+        "offsets": offsets,
+        "side": np.where(pz[valid] < 0.0, -1, 1).astype(np.int8, copy=False),
+        "xi": xi[valid].astype(np.float64, copy=False),
+    }
+
+
+def iter_parquet_interaction_blocks(np, filename, sqrt_s):
     try:
-        import pyarrow.compute as pc
         import pyarrow.parquet as pq
     except ImportError as exc:
         raise RuntimeError("pyarrow is required to read minbias Parquet files; run `source setup_env.sh`") from exc
 
     columns = ["event_id", "pdg_id", "is_final", "pz", "E"]
-    table = pq.read_table(filename, columns=columns)
-    missing = [column for column in columns if column not in table.column_names]
+    parquet_file = pq.ParquetFile(filename)
+    missing = [column for column in columns if column not in parquet_file.schema_arrow.names]
     if missing:
         raise RuntimeError(f"Required columns missing in {filename}: {', '.join(missing)}")
 
-    all_event_ids = np.asarray(table["event_id"]).astype(np.int64, copy=False)
-    unique_events = np.unique(all_event_ids)
-    start_interaction_id = int(next_interaction_id)
-    next_interaction_id += int(unique_events.size)
-    universe = np.column_stack(
-        (
-            np.zeros(unique_events.size, dtype=np.int64),
-            np.arange(start_interaction_id, int(next_interaction_id), dtype=np.int64),
-        )
-    )
+    pending = None
+    last_event_id = None
+    for batch in parquet_file.iter_batches(batch_size=MINBIAS_BATCH_SIZE, columns=columns):
+        arrays = {
+            "event_id": np.asarray(batch.column("event_id")).astype(np.int64, copy=False),
+            "pdg_id": np.asarray(batch.column("pdg_id")),
+            "is_final": np.asarray(batch.column("is_final"), dtype=bool),
+            "pz": np.asarray(batch.column("pz")).astype(np.float64, copy=False),
+            "energy": np.asarray(batch.column("E")).astype(np.float64, copy=False),
+        }
+        if arrays["event_id"].size == 0:
+            continue
+        if last_event_id is not None and arrays["event_id"][0] < last_event_id:
+            raise RuntimeError(f"Minbias Parquet event_id values must be ordered in {filename}")
+        last_event_id = int(arrays["event_id"][-1])
 
-    mask = pc.and_(
-        pc.and_(pc.equal(table["pdg_id"], 2212), pc.equal(table["is_final"], True)),
-        pc.not_equal(table["pz"], 0.0),
-    )
-    protons = table.filter(mask)
-    if protons.num_rows == 0:
-        return (
-            {
-                "bx_id": np.empty(0, dtype=np.int64),
-                "interaction_id": np.empty(0, dtype=np.int64),
-                "side": np.empty(0, dtype=np.int8),
-                "xi": np.empty(0, dtype=np.float64),
-            },
-            universe,
-            next_interaction_id,
-        )
+        if pending is not None:
+            for name in arrays:
+                arrays[name] = np.concatenate((pending[name], arrays[name]))
 
-    event_ids = np.asarray(protons["event_id"]).astype(np.int64, copy=False)
-    interaction_ids = np.searchsorted(unique_events, event_ids).astype(np.int64, copy=False) + start_interaction_id
+        last_start = int(np.nonzero(arrays["event_id"] == arrays["event_id"][-1])[0][0])
+        complete = {name: values[:last_start] for name, values in arrays.items()}
+        pending = {name: values[last_start:] for name, values in arrays.items()}
+        block = parquet_interaction_block(np, sqrt_s=sqrt_s, **complete)
+        if block is not None:
+            yield block
 
-    pz = np.asarray(protons["pz"]).astype(np.float64, copy=False)
-    energy = np.asarray(protons["E"]).astype(np.float64, copy=False)
-    beam_energy = float(sqrt_s) / 2.0
-    xi = (beam_energy - energy) / beam_energy
-    valid = np.isfinite(xi) & (xi > 0.0)
+    if pending is not None:
+        block = parquet_interaction_block(np, sqrt_s=sqrt_s, **pending)
+        if block is not None:
+            yield block
 
-    bx_id = np.zeros(np.sum(valid), dtype=np.int64)
-    interaction_id = interaction_ids[valid]
-    return (
-        {
-            "bx_id": bx_id,
-            "interaction_id": interaction_id,
-            "side": np.where(pz[valid] < 0.0, -1, 1).astype(np.int8, copy=False),
-            "xi": xi[valid],
-        },
-        universe,
-        next_interaction_id,
-    )
+
+def iter_minbias_interaction_blocks(np, files, sqrt_s):
+    for filename in files:
+        if filename.suffix == ".npz":
+            yield load_npz_interaction_block(np, filename)
+        elif filename.suffix == ".parquet":
+            yield from iter_parquet_interaction_blocks(np, filename, sqrt_s)
+        else:
+            raise RuntimeError(f"Unsupported minbias input file type: {filename}")
+
+
+def new_minbias_cursor(np, campaign, files, sqrt_s):
+    return {
+        "campaign": campaign,
+        "files": files,
+        "np": np,
+        "sqrt_s": sqrt_s,
+        "blocks": iter_minbias_interaction_blocks(np, files, sqrt_s),
+        "block": None,
+        "block_cursor": 0,
+        "exhausted": False,
+        "interactions_consumed": 0,
+        "bx_built": 0,
+        "multi_pair_bx": 0,
+        "pairs_kept": 0,
+    }
 
 
 def load_minbias(np, args, pps_config):
     path, campaign = minbias_input_path(args)
     files = discover_minbias_files(path, args.max_minbias_files)
-    fields = ("bx_id", "interaction_id", "side", "xi")
-    parts = {field: [] for field in fields}
-    universe_parts = []
-    next_interaction_id = 0
-
-    for filename in files:
-        if filename.suffix == ".npz":
-            file_protons, file_universe, next_interaction_id = load_npz_minbias_file(
-                np, filename, next_interaction_id
-            )
-        elif filename.suffix == ".parquet":
-            file_protons, file_universe, next_interaction_id = load_parquet_minbias_file(
-                np, filename, next_interaction_id, pps_config["sqrt_s"]
-            )
-        else:
-            raise RuntimeError(f"Unsupported minbias input file type: {filename}")
-        for field in fields:
-            parts[field].append(file_protons[field])
-        universe_parts.append(file_universe)
-
-    protons = {field: np.concatenate(values) if values else np.empty(0) for field, values in parts.items()}
-    if universe_parts:
-        universe = np.concatenate(universe_parts, axis=0)
-        order = np.lexsort((universe[:, 1], universe[:, 0]))
-        universe = universe[order]
-    else:
-        universe = np.empty((0, 2), dtype=np.int64)
-
-    grouped = {}
-    for index, key in enumerate(zip(protons["bx_id"], protons["interaction_id"])):
-        grouped.setdefault((int(key[0]), int(key[1])), []).append(index)
-
-    print(
-        f"Loaded minbias campaign {campaign}: files={len(files)}, "
-        f"interactions={len(universe)}, protons={len(protons['xi'])}"
-    )
-    return {
-        "campaign": campaign,
-        "files": files,
-        "protons": protons,
-        "universe": universe,
-        "grouped": {key: np.asarray(indices, dtype=np.int64) for key, indices in grouped.items()},
-        "cursor": 0,
-        "interactions_consumed": 0,
-        "bx_built": 0,
-        "multi_pair_bx": 0,
-        "pairs_kept": 0,
-    }
+    print(f"Streaming minbias campaign {campaign}: files={len(files)}")
+    return new_minbias_cursor(np, campaign, files, pps_config["sqrt_s"])
 
 
 def consume_interactions(minbias, n_interactions):
-    start = minbias["cursor"]
-    stop = min(start + int(n_interactions), len(minbias["universe"]))
-    minbias["cursor"] = stop
-    minbias["interactions_consumed"] += stop - start
-    return minbias["universe"][start:stop]
+    np = minbias["np"]
+    remaining = int(n_interactions)
+    side_parts = []
+    xi_parts = []
+    while remaining:
+        block = minbias["block"]
+        if block is None or minbias["block_cursor"] >= len(block["offsets"]) - 1:
+            try:
+                block = next(minbias["blocks"])
+            except StopIteration:
+                minbias["exhausted"] = True
+                return None
+            minbias["block"] = block
+            minbias["block_cursor"] = 0
+
+        start_interaction = minbias["block_cursor"]
+        available = len(block["offsets"]) - 1 - start_interaction
+        take = min(remaining, available)
+        start_proton = block["offsets"][start_interaction]
+        stop_proton = block["offsets"][start_interaction + take]
+        if stop_proton > start_proton:
+            side_parts.append(block["side"][start_proton:stop_proton])
+            xi_parts.append(block["xi"][start_proton:stop_proton])
+        minbias["block_cursor"] += take
+        minbias["interactions_consumed"] += take
+        remaining -= take
+
+    return {
+        "side": np.concatenate(side_parts) if side_parts else np.empty(0, dtype=np.int8),
+        "xi": np.concatenate(xi_parts) if xi_parts else np.empty(0, dtype=np.float64),
+    }
 
 
 def minbias_process_cursor(minbias):
-    return {
-        "campaign": minbias["campaign"],
-        "files": minbias["files"],
-        "protons": minbias["protons"],
-        "universe": minbias["universe"],
-        "grouped": minbias["grouped"],
-        "cursor": 0,
-        "interactions_consumed": 0,
-        "bx_built": 0,
-        "multi_pair_bx": 0,
-        "pairs_kept": 0,
-    }
+    return new_minbias_cursor(
+        minbias["np"], minbias["campaign"], minbias["files"], minbias["sqrt_s"]
+    )
 
 
 def add_minbias_counters(total, part):
@@ -383,26 +415,15 @@ def add_minbias_counters(total, part):
 def random_bx_pairs(np, minbias, pps_config, rng):
     n_interactions = int(rng.poisson(200.0 if pps_config.get("mu") is None else pps_config["mu"]))
     interactions = consume_interactions(minbias, n_interactions)
-    if interactions.shape[0] < n_interactions:
+    if interactions is None:
         return None
 
-    proton_indices = []
-    for bx_id, interaction_id in interactions:
-        idx = minbias["grouped"].get((int(bx_id), int(interaction_id)))
-        if idx is not None:
-            proton_indices.append(idx)
-    if proton_indices:
-        proton_indices = np.concatenate(proton_indices)
-    else:
-        proton_indices = np.empty(0, dtype=np.int64)
-
     minbias["bx_built"] += 1
-    if proton_indices.size == 0:
+    if interactions["xi"].size == 0:
         return empty_pairs(np)
 
-    protons = minbias["protons"]
-    xi = np.asarray(protons["xi"][proton_indices], dtype=np.float64)
-    side = np.asarray(protons["side"][proton_indices], dtype=np.int64)
+    xi = interactions["xi"]
+    side = interactions["side"]
     passed = analyzer.passes_pps(np, xi, pps_config["xi_ranges"])
     if not np.any(passed):
         return empty_pairs(np)
@@ -512,7 +533,7 @@ def read_random_samples(ak, np, uproot, processes, parameters, pps_config, args,
             n_generated += table["n_generated"]
             n_selected += table["n_selected"]
             assigned_bx += append_random_observables(np, observables, table, process_minbias, pps_config, rng)
-            if process_minbias["cursor"] >= len(process_minbias["universe"]):
+            if process_minbias["exhausted"]:
                 break
 
         if files_read == 0:
@@ -541,7 +562,7 @@ def read_random_samples(ak, np, uproot, processes, parameters, pps_config, args,
             f"random_pairs={process_minbias['pairs_kept']}, "
             f"multi_pair_bx={process_minbias['multi_pair_bx']}, tag_weight={tag:.6g}"
         )
-        if process_minbias["cursor"] >= len(process_minbias["universe"]):
+        if process_minbias["exhausted"]:
             print(f"Warning: stopping {process_name} because minbias interactions are exhausted")
 
     for process_name, reason in skipped:
