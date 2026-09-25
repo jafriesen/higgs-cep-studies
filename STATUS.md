@@ -48,14 +48,16 @@ normalisation, not nominal, and `wpnew`/`wpold` differ in the c-tag working poin
   written without a creation date so unchanged figures are byte-identical.
   H(cc) figures still use the old inputs.
 
-## Feature importance (H(bb) nominal, in progress)
+## Feature importance (H(bb) nominal)
 
 - Grouped drop-and-retrain, 5 seeds, paired with the nominal seeds
   (`..._gg_cc_drop_<group>_g256_s<seed>`, groups in `mva/Hbb/feature_groups.yaml`):
   dijet kinematics -21.9% +- 0.9%, rapidity gaps/track jets -9.7% +- 1.3%,
   charged activity outside jets -8.7% +- 1.7%, jet structure -0.7% +- 1.6%,
-  n_vertices +1.9% +- 1.4%.  Running: drop `jet1_mass_estimator` alone, and drop
-  activity + gaps together.  `yx_minus_dijet_rapidity` cannot be dropped: it is
+  n_vertices +1.9% +- 1.4%, `jet1_mass_estimator` alone -1.1% +- 1.6%, and
+  activity + gaps together -89.0% +- 0.9% (Z 0.842 -> 0.093): the exclusivity
+  information is essential but carried redundantly by the two groups, so each
+  alone looks modest.  `yx_minus_dijet_rapidity` cannot be dropped: it is
   the proton-grid axis for accidental pairs, and training requires it.
 - Tail SHAP (`mva/Hbb/feature_importance_shap.py`, weighted by each event's share
   of the final selection): events pass because they look exclusive --
