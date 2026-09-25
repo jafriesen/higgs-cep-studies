@@ -24,6 +24,18 @@ TIMING_DATA = ROOT / "paper-plots/data/trigger-timing"
 TIMINGS_PS = np.asarray((1, 3, 5, 8, 10, 15, 20, 30), dtype=float)
 REFERENCE_CROSS_SECTION_FB = 0.4
 
+# H(bb) inputs from the mva/ framework (nominal includes mistagged charm).
+HBB_DATASET = ROOT / "mva/Hbb/data/fsr_mtd_eight_class_gg_cc"
+HBB_RESULTS = ROOT / "mva/Hbb/results"
+HBB_SEEDS = (12345, 20260101, 20260202, 20260303, 20260404)
+HBB_REPRESENTATIVE_SEED = 12345  # closest to the 10 ps five-seed mean Z
+HBB_SETUPS = {
+    10: "fsr_mtd_binary_7p1ps_allrows_gg_cc_g256_s{seed}",
+    3: "fsr_mtd_binary_3ps_7p1ps_allrows_gg_cc_g256_s{seed}",
+    "exclusive": "fsr_mtd_binary_7p1ps_allrows_exclusive_only_gg_cc_g256_s{seed}",
+}
+HBB_FEATURE_COMPONENTS = ("Hbb_fsr", "QCDbb_fsr", "QCDbb_madgraph_fsr")
+
 COLORS = {
     "signal": "#3f90da",
     "exclusive": "#ffa90e",
@@ -66,7 +78,8 @@ def plot_header(ax):
 
 def save_figure(figure, output_dir: Path, name: str):
     output_dir.mkdir(parents=True, exist_ok=True)
-    figure.savefig(output_dir / f"{name}.pdf")
+    # no creation date, so an unchanged figure is byte-identical when regenerated
+    figure.savefig(output_dir / f"{name}.pdf", metadata={"CreationDate": None})
     figure.savefig(output_dir / f"{name}.png", dpi=220)
     plt.close(figure)
 
@@ -177,92 +190,44 @@ def plot_trigger_timing(output_dir: Path):
 
 
 def hbb_feature_histograms():
-    data_dir = ROOT / "analysis/MVA_new/data"
-    with (data_dir / "metadata.yaml").open(encoding="utf-8") as handle:
+    """Preselection shapes from the nominal H(bb) dataset.  Accidental-proton rows
+    carry their expected pair intensity (pair_band_intensity) on top of the
+    central-event weight, as in the training."""
+    with (HBB_DATASET / "metadata.yaml").open(encoding="utf-8") as handle:
         metadata = yaml.safe_load(handle)
-    names = list(metadata["features"])
-    matrix = np.load(data_dir / "x.npy", mmap_mode="r")
-    classes = np.load(data_dir / "class.npy", mmap_mode="r")
-    weights = np.load(data_dir / "physical_weight.npy", mmap_mode="r")
+    names = list(metadata["central_features"])
+    ids = {item["name"]: item["id"] for item in metadata["components"]}
+    pooled = {item["id"] for item in metadata["components"] if not item["real_protons"]}
+    matrix = np.load(HBB_DATASET / "x.npy", mmap_mode="r")
+    component = np.load(HBB_DATASET / "component.npy", mmap_mode="r")
+    physical = np.load(HBB_DATASET / "physical_weight.npy", mmap_mode="r")
+    band = np.load(HBB_DATASET / "pair_band_intensity.npy", mmap_mode="r")
     specifications = {
-        "tracks": {
-            "index": names.index("n_tracks_interjet"),
-            "edges": np.arange(-0.5, 30.5, 1.0),
-        },
-        "delta_eta": {
-            "index": names.index("delta_eta_jj"),
-            "edges": np.linspace(0.0, 4.5, 31),
-        },
+        "tracks": {"index": names.index("n_tracks_interjet"), "edges": np.arange(-0.5, 30.5, 1.0)},
+        "delta_eta": {"index": names.index("delta_eta_jj"), "edges": np.linspace(0.0, 4.5, 31)},
+        "leading_pt": {"index": names.index("jet1_pt"), "edges": np.arange(15.0, 150.1, 2.5)},
     }
     histograms = {
-        feature: {class_id: np.zeros(len(spec["edges"]) - 1) for class_id in range(3)}
+        feature: {class_id: np.zeros(len(spec["edges"]) - 1) for class_id in range(len(HBB_FEATURE_COMPONENTS))}
         for feature, spec in specifications.items()
     }
     chunk_size = 500_000
-    for start in range(0, len(classes), chunk_size):
-        stop = min(start + chunk_size, len(classes))
-        chunk_class = np.asarray(classes[start:stop])
-        chunk_weight = np.asarray(weights[start:stop])
+    for start in range(0, len(component), chunk_size):
+        stop = min(start + chunk_size, len(component))
+        chunk_component = np.asarray(component[start:stop])
+        chunk_weight = np.asarray(physical[start:stop]) * np.where(
+            np.isin(chunk_component, list(pooled)), np.asarray(band[start:stop]), 1.0
+        )
         for feature, spec in specifications.items():
-            values = np.asarray(matrix[start:stop, spec["index"]])
-            if feature == "tracks":
-                values = np.minimum(values, spec["edges"][-1] - 1.0e-6)
-            for class_id in range(3):
-                selected = chunk_class == class_id
+            values = np.asarray(matrix[start:stop, spec["index"]], dtype=float)
+            values = np.minimum(values, spec["edges"][-1] - 1.0e-6)
+            for class_id, name in enumerate(HBB_FEATURE_COMPONENTS):
+                selected = chunk_component == ids[name]
                 if np.any(selected):
                     histograms[feature][class_id] += np.histogram(
-                        values[selected],
-                        bins=spec["edges"],
-                        weights=chunk_weight[selected],
+                        values[selected], bins=spec["edges"], weights=chunk_weight[selected]
                     )[0]
     return specifications, histograms
-
-
-def leading_jet_pt_histograms(edges):
-    """Leading-jet pT is not in the reduced dataset; rebuild it from the full
-    feature cache as jet1_pt_over_mjj * dijet_mass.  The reduced dataset is the
-    cache without the dropped MadGraph campaign, in cache order, so its
-    restitched physical weights apply row by row."""
-    data_dir = ROOT / "analysis/MVA_new/data"
-    with (data_dir / "metadata.yaml").open(encoding="utf-8") as handle:
-        metadata = yaml.safe_load(handle)
-    cache_dir = Path(metadata["source_cache"])
-    with (cache_dir / "metadata.yaml").open(encoding="utf-8") as handle:
-        names = list(yaml.safe_load(handle)["features"])
-    cache_classes = np.asarray(np.load(cache_dir / "class.npy", mmap_mode="r"))
-    campaigns = np.load(cache_dir / "source_campaign.npy", mmap_mode="r")
-    matrix = np.load(cache_dir / "x.npy", mmap_mode="r")
-    classes = np.asarray(np.load(data_dir / "class.npy", mmap_mode="r"))
-    weights = np.load(data_dir / "physical_weight.npy", mmap_mode="r")
-    ratio_index = names.index("jet1_pt_over_mjj")
-    mass_index = names.index("dijet_mass")
-    histograms = {class_id: np.zeros(len(edges) - 1) for class_id in range(3)}
-    chunk_size = 500_000
-    offset = 0
-    for start in range(0, len(cache_classes), chunk_size):
-        stop = min(start + chunk_size, len(cache_classes))
-        chunk_class = cache_classes[start:stop]
-        keep = ~(
-            (chunk_class == 2)
-            & (np.asarray(campaigns[start:stop]) == metadata["dropped_campaign"])
-        )
-        kept = int(np.sum(keep))
-        if not np.array_equal(chunk_class[keep], classes[offset : offset + kept]):
-            raise RuntimeError("Cache rows do not line up with the reduced dataset")
-        pt = np.asarray(matrix[start:stop, ratio_index], dtype=float)[keep] * np.asarray(
-            matrix[start:stop, mass_index], dtype=float
-        )[keep]
-        pt = np.minimum(pt, edges[-1] - 1.0e-6)
-        chunk_weight = np.asarray(weights[offset : offset + kept])
-        for class_id in range(3):
-            selected = chunk_class[keep] == class_id
-            histograms[class_id] += np.histogram(
-                pt[selected], bins=edges, weights=chunk_weight[selected]
-            )[0]
-        offset += kept
-    if offset != len(classes):
-        raise RuntimeError("Cache rows do not line up with the reduced dataset")
-    return histograms
 
 
 def delta_y_histograms():
@@ -270,7 +235,10 @@ def delta_y_histograms():
     with np.load(ROOT / "paper-plots/data/delta_y_histograms.npz") as source:
         edges = np.asarray(source["edges"], dtype=float)
         histograms = np.asarray(source["histograms"], dtype=float)
-    return edges, {class_id: histograms[class_id] for class_id in range(3)}
+        components = tuple(str(name) for name in source["components"])
+    if components != HBB_FEATURE_COMPONENTS:
+        raise RuntimeError(f"delta_y_histograms.npz holds {components}; rerun delta_y_histograms.py")
+    return edges, {class_id: histograms[class_id] for class_id in range(len(components))}
 
 
 def normalized(histogram):
@@ -318,8 +286,8 @@ def plot_feature(output_dir, name, histograms, edges, classes, xlabel, xlim, leg
 def plot_discriminants(output_dir: Path):
     specifications, histograms = hbb_feature_histograms()
     physics_classes = (
-        (0, r"CEP $H\to b\bar b$", COLORS["signal"], "-"),
-        (1, r"CEP $b\bar b$", COLORS["exclusive"], "--"),
+        (0, r"$H\to b\bar b$", COLORS["signal"], "-"),
+        (1, r"Exclusive $gg\to b\bar b$", COLORS["exclusive"], "--"),
         (2, r"$b\bar b + pp$", COLORS["inclusive"], ":"),
     )
 
@@ -360,12 +328,11 @@ def plot_discriminants(output_dir: Path):
         10.0,
         log=False,
     )
-    pt_edges = np.arange(15.0, 150.1, 2.5)
     plot_feature(
         output_dir,
         "leading_jet_pt",
-        leading_jet_pt_histograms(pt_edges),
-        pt_edges,
+        histograms["leading_pt"],
+        specifications["leading_pt"]["edges"],
         physics_classes,
         r"Leading jet $p_T$ [GeV]",
         (15.0, 90.0),
@@ -375,12 +342,14 @@ def plot_discriminants(output_dir: Path):
     )
 
 
-def mass_components(channel: str, array: np.ndarray):
+def mass_components(channel: str, array: np.ndarray, components=None):
     if channel == "hbb":
+        exclusive = [i for i, item in enumerate(components) if item["real_protons"] and not item["signal"]]
+        inclusive = [i for i, item in enumerate(components) if not item["real_protons"]]
         return (
-            (array[0], r"CEP $H\to b\bar b$", COLORS["signal"], "-"),
-            (array[1], r"CEP $b\bar b$", COLORS["exclusive"], "--"),
-            (array[2], r"$b\bar b + pp$", COLORS["inclusive"], ":"),
+            (array[0], r"$H\to b\bar b$", COLORS["signal"], "-"),
+            (array[exclusive].sum(axis=0), "Exclusive backgrounds", COLORS["exclusive"], "--"),
+            (array[inclusive].sum(axis=0), r"$b\bar b$, $c\bar c + pp$", COLORS["inclusive"], ":"),
         )
     return (
         (array[0], r"CEP $H\to c\bar c$", COLORS["signal"], "-"),
@@ -392,13 +361,19 @@ def mass_components(channel: str, array: np.ndarray):
 
 
 def plot_mass_spectrum(output_dir: Path, channel: str, stage: str):
-    analysis_dir = "MVA_new" if channel == "hbb" else "MVA_hcc"
-    path = ROOT / f"analysis/{analysis_dir}/results/report_data.npz"
+    components = None
+    if channel == "hbb":
+        result = HBB_RESULTS / HBB_SETUPS[10].format(seed=HBB_REPRESENTATIVE_SEED)
+        path = result / "report_data.npz"
+        with (result / "report.yaml").open(encoding="utf-8") as handle:
+            components = yaml.safe_load(handle)["components"]
+    else:
+        path = ROOT / "analysis/MVA_hcc/results/report_data.npz"
     with np.load(path, allow_pickle=False) as source:
         edges = np.asarray(source["mass_bins"], dtype=float)
         values = np.asarray(source[f"{stage}_mass"], dtype=float)
     figure, ax = plt.subplots(figsize=(5.0, 5.0))
-    for histogram, label, color, linestyle in mass_components(channel, values):
+    for histogram, label, color, linestyle in mass_components(channel, values, components):
         hep.histplot(
             histogram,
             bins=edges,
@@ -490,14 +465,11 @@ def significance(component_mass: np.ndarray) -> float:
 
 
 def sensitivity_scan(channel: str, factors):
-    if channel == "hbb":
-        path = ROOT / "analysis/MVA_new/results/report_data.npz"
-        survival_scaled = (0, 1)
-        real_protons = (0, 1)
-    else:
-        path = ROOT / "analysis/MVA_hcc/results/report_data.npz"
-        survival_scaled = (0, 1, 2, 6)
-        real_protons = (0, 1, 2, 3, 6)
+    if channel != "hcc":
+        raise ValueError("H(bb) uses plot_hbb_sensitivity")
+    path = ROOT / "analysis/MVA_hcc/results/report_data.npz"
+    survival_scaled = (0, 1, 2, 6)
+    real_protons = (0, 1, 2, 3, 6)
     with np.load(path, allow_pickle=False) as source:
         nominal = np.asarray(source["selected_mass"], dtype=float)
     cross_sections = np.geomspace(0.1, 10.0, 300)
@@ -518,6 +490,74 @@ def sensitivity_scan(channel: str, factors):
     return cross_sections, curves
 
 
+def hbb_scan_curve(setup: str, cross_sections):
+    """Five-seed mean of Z versus the total CEP Higgs cross section.
+
+    Survival-scaled components (signal and QCD exclusive backgrounds) scale with
+    the cross section; photon-exchange and accidental-proton backgrounds stay
+    fixed.  At each point the best stored score threshold is re-selected among
+    those with the training's MadGraph support (all of them if there is no
+    MadGraph component), as in mva/common/scans.py."""
+    curves = []
+    for seed in HBB_SEEDS:
+        result = HBB_RESULTS / HBB_SETUPS[setup].format(seed=seed)
+        with (result / "report.yaml").open(encoding="utf-8") as handle:
+            components = yaml.safe_load(handle)["components"]
+        with np.load(result / "report_data.npz", allow_pickle=False) as source:
+            scan_mass = np.asarray(source["scan_component_mass"], dtype=float)
+            effective = np.asarray(source["scan_madgraph_effective"], dtype=float)
+            floor = float(source["support_floor"])
+        valid = np.flatnonzero(effective >= floor)
+        if valid.size == 0:
+            valid = np.arange(effective.size)
+        scaled = np.array([bool(item["survival_scaled"]) for item in components])
+        values = []
+        for cross_section in cross_sections:
+            factor = np.where(scaled, cross_section / REFERENCE_CROSS_SECTION_FB, 1.0)
+            varied = scan_mass[valid] * factor[np.newaxis, :, np.newaxis]
+            values.append(max(significance(point) for point in varied))
+        curves.append(values)
+    return np.mean(np.asarray(curves), axis=0)
+
+
+def plot_hbb_sensitivity(output_dir: Path, with_exclusive_limit: bool):
+    cross_sections = np.geomspace(0.1, 10.0, 300)
+    curves = {setup: hbb_scan_curve(setup, cross_sections) for setup in (10, 3, "exclusive")}
+    figure, ax = plt.subplots(figsize=(5.0, 5.0))
+    if with_exclusive_limit:
+        ax.plot(cross_sections, curves["exclusive"], color="0.6", linewidth=2.0,
+                label="No inclusive background")
+    for timing, color in ((10, COLORS["timing10"]), (3, COLORS["timing3"])):
+        ax.plot(cross_sections, curves[timing], color=color, label=f"{timing} ps proton timing")
+    ax.axvline(REFERENCE_CROSS_SECTION_FB, color="0.35", linestyle=":", linewidth=1.5)
+    ax.axhline(3.0, color="0.65", linestyle="--", linewidth=1.0)
+    ax.axhline(5.0, color="0.65", linestyle="--", linewidth=1.0)
+    ax.set_xscale("log")
+    ax.set_xlim(0.1, 10.0)
+    ax.set_xticks((0.1, 0.2, 0.4, 1.0, 2.0, 5.0, 10.0))
+    ax.get_xaxis().set_major_formatter(ScalarFormatter())
+    ax.xaxis.set_minor_formatter(NullFormatter())
+    ax.set_ylim(bottom=0.0)
+    ax.set_xlabel(r"Total $\sigma(pp\to pHp)$ [fb]")
+    ax.set_ylabel(r"Expected sensitivity $Z$")
+    ax.grid(True, which="both", alpha=0.2)
+    ax.legend(frameon=False, loc="upper left", fontsize=9.5, labelspacing=0.3, handlelength=1.7)
+    ax.text(0.96, 0.86, r"$H\to b\bar b$", transform=ax.transAxes, ha="right", va="top", fontsize=12)
+    plot_header(ax)
+    figure.tight_layout()
+    name = "hbb_sensitivity_exclusive_limit" if with_exclusive_limit else "hbb_sensitivity"
+    save_figure(figure, output_dir, name)
+    return {
+        "cross_section_fb": cross_sections.tolist(),
+        "seeds": list(HBB_SEEDS),
+        "curves": {str(setup): curve.tolist() for setup, curve in curves.items()},
+        "reference_significance": {
+            str(setup): float(np.interp(REFERENCE_CROSS_SECTION_FB, cross_sections, curve))
+            for setup, curve in curves.items()
+        },
+    }
+
+
 def plot_sensitivity(output_dir: Path, channel: str, factors):
     cross_sections, curves = sensitivity_scan(channel, factors)
     figure, ax = plt.subplots(figsize=(5.0, 5.0))
@@ -529,9 +569,6 @@ def plot_sensitivity(output_dir: Path, channel: str, factors):
             label=f"{timing} ps proton timing",
         )
     ax.axvline(REFERENCE_CROSS_SECTION_FB, color="0.35", linestyle=":", linewidth=1.5)
-    if channel == "hbb":
-        ax.axhline(3.0, color="0.65", linestyle="--", linewidth=1.0)
-        ax.axhline(5.0, color="0.65", linestyle="--", linewidth=1.0)
     ax.set_xscale("log")
     ax.set_xlim(0.1, 10.0)
     ax.set_xticks((0.1, 0.2, 0.4, 1.0, 2.0, 5.0, 10.0))
@@ -585,9 +622,10 @@ def main():
     factors = timing_factors()
     summary["timing_factors"] = factors
     summary["sensitivity"] = {
-        channel: plot_sensitivity(output_dir, channel, factors)
-        for channel in ("hbb", "hcc")
+        "hbb": plot_hbb_sensitivity(output_dir, with_exclusive_limit=False),
+        "hcc": plot_sensitivity(output_dir, "hcc", factors),
     }
+    plot_hbb_sensitivity(output_dir, with_exclusive_limit=True)
     with (output_dir / "plot_summary.json").open("w", encoding="utf-8") as handle:
         json.dump(summary, handle, indent=2)
         handle.write("\n")
