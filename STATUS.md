@@ -22,15 +22,47 @@ Paper-facing numbers are traced in the paper repo (`higgs-cep-paper/JHEP_example
 (`mva/Hcc/results/fsr_mtd_binary_*`); the `sc20_*` runs are at 20x survival
 normalisation, not nominal, and `wpnew`/`wpold` differ in the c-tag working point.
 
-## In progress
+## Nominal H(bb) setup (charm included), 2026-09-24
 
-- H(bb) with mistagged charm: profile `fsr_mtd_eight_class_gg_cc` adds
-  `QCDcc_fsr`, `QEDcc_fsr`, `QCDcc_madgraph_fsr`.  Dataset
-  `mva/Hbb/data/fsr_mtd_eight_class_gg_cc` built 2026-09-24 (the five existing
-  processes are identical to v04; charm preselection 7.55 / 30.9 / 1.80e8).
-  Training `mva/Hbb/results/fsr_mtd_binary_7p1ps_allrows_gg_cc_g256_s12345`
-  submitted with the nominal settings.  Estimate before the build: +9 background
-  events (+2.4%, Z -1.2%) at c->b mistag 0.1.
+- Profile `fsr_mtd_eight_class_gg_cc` (adds `QCDcc_fsr`, `QEDcc_fsr`,
+  `QCDcc_madgraph_fsr`), dataset `mva/Hbb/data/fsr_mtd_eight_class_gg_cc`.
+- Five seeds each (12345, 20260101, 20260202, 20260303, 20260404), results
+  `mva/Hbb/results/fsr_mtd_binary_{7p1ps,3ps_7p1ps}_allrows_gg_cc_g256_s<seed>`:
+  Z = 0.842 +- 0.017 (sd) at 10 ps PPS timing, 1.369 +- 0.024 at 3 ps.
+  Without charm (`..._gg_v04_base_...`): 0.860 +- 0.025.  Charm costs 1.2%
+  (stable across seeds); retraining with charm is consistent with no effect.
+  Seed 12345 is closest to the 10 ps mean and is the representative training.
+- "No inclusive background" reference: profile `fsr_mtd_exclusive_only_gg_cc`,
+  `..._exclusive_only_gg_cc_g256_s<seed>`: Z = 3.155 +- 0.004.  Exclusive MC
+  statistics are not limiting (the operating point keeps ~98% of each
+  exclusive sample's MC events); the classifier separates signal from the
+  exclusive backgrounds only moderately (AUC 0.63-0.79), so this reference is
+  set almost entirely by the preselection.
+- Sensitivity milestones (five-seed means, 0.4 fb reference convention):
+  Z = 3 at 1.8 fb (10 ps), 1.1 fb (3 ps), 0.37 fb (no inclusive);
+  Z = 5 at 3.5 / 2.3 / 0.94 fb.
+- Paper figures: `paper-plots/make_plots.py` now reads these for H(bb)
+  (discriminants, mass spectra, `hbb_sensitivity` and
+  `hbb_sensitivity_exclusive_limit`); `paper-plots/delta_y_histograms.py` was
+  rewritten on the new framework and closes to the dataset yields.  PDFs are
+  written without a creation date so unchanged figures are byte-identical.
+  H(cc) figures still use the old inputs.
+
+## Feature importance (H(bb) nominal, in progress)
+
+- Grouped drop-and-retrain, 5 seeds, paired with the nominal seeds
+  (`..._gg_cc_drop_<group>_g256_s<seed>`, groups in `mva/Hbb/feature_groups.yaml`):
+  dijet kinematics -21.9% +- 0.9%, rapidity gaps/track jets -9.7% +- 1.3%,
+  charged activity outside jets -8.7% +- 1.7%, jet structure -0.7% +- 1.6%,
+  n_vertices +1.9% +- 1.4%.  Running: drop `jet1_mass_estimator` alone, and drop
+  activity + gaps together.  `yx_minus_dijet_rapidity` cannot be dropped: it is
+  the proton-grid axis for accidental pairs, and training requires it.
+- Tail SHAP (`mva/Hbb/feature_importance_shap.py`, weighted by each event's share
+  of the final selection): events pass because they look exclusive --
+  `sum_gap_size`, `eta_rms_outside`, `n_tracks_outside_jets` dominate for signal
+  and both background classes alike, then the two proton features.  This
+  explains passing, not separation; the drop-and-retrain measures separation.
+  Against exclusive backgrounds alone (exclusive-only model) kinematics dominate.
 
 ## Established this round (details in the paper repo's `paper-notes.md`)
 
