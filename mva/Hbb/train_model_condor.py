@@ -701,9 +701,9 @@ def _parser():
         "--pps-time-ps", type=float, default=10.0, help="Single-arm PPS time resolution for the vertex likelihood"
     )
     submit_parser.add_argument("--seed", type=int, default=12345)
-    submit_parser.add_argument("--jobs", type=int, default=16)
-    submit_parser.add_argument("--request-memory", type=int, default=32768)
-    submit_parser.add_argument("--merge-memory", type=int, default=16384)
+    submit_parser.add_argument("--jobs", type=int, default=8)
+    submit_parser.add_argument("--request-memory", type=int, default=8192)
+    submit_parser.add_argument("--merge-memory", type=int, default=2048)
     submit_parser.add_argument("--skip-hash", action="store_true")
     submit_parser.add_argument("--resume", action="store_true")
     submit_parser.add_argument("--dry-run", action="store_true")
