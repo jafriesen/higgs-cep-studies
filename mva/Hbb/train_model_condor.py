@@ -81,6 +81,11 @@ def _build_manifest(args):
         features = list(channel["feature_sets"][args.feature_set])
     except KeyError as error:
         raise ValueError(f"Unknown feature set: {args.feature_set}") from error
+    dropped = list(getattr(args, "drop_features", None) or [])
+    unknown = [name for name in dropped if name not in features]
+    if unknown:
+        raise ValueError(f"Cannot drop features not in {args.feature_set}: {unknown}")
+    features = [name for name in features if name not in dropped]
     available = set(metadata["central_features"]) | set(PROTON_FEATURE_NAMES)
     missing = [name for name in features if name not in available]
     if missing:
@@ -106,7 +111,7 @@ def _build_manifest(args):
         "ladder_bins": 6,
         "vertex_bins": 8,
         "beam_sigma_z_cm": 5.7,
-        "pps_time_ps": 10.0,
+        "pps_time_ps": float(args.pps_time_ps),
         "pv_time_ps": 7.1,
         "pv_z_resolution_cm": 0.001,
         "pps_time_scan": [5.0, 10.0, 20.0, 30.0],
@@ -118,6 +123,7 @@ def _build_manifest(args):
         "pileup_mu": float(metadata["protons"].get("pileup_mu", 200.0)),
         "pps_config": channel["pps_config"],
         "feature_set": args.feature_set,
+        "dropped_features": dropped,
         "architecture": args.architecture,
         "all_rows": bool(args.all_rows),
         "model_selection": args.model_selection,
@@ -688,6 +694,12 @@ def _parser():
         help="Out-of-fold fraction to upweight within each nonexclusive campaign",
     )
     submit_parser.add_argument("--hard-negative-boost", type=float, default=10.0)
+    submit_parser.add_argument(
+        "--drop-features", nargs="+", default=[], help="Remove these features from --feature-set"
+    )
+    submit_parser.add_argument(
+        "--pps-time-ps", type=float, default=10.0, help="Single-arm PPS time resolution for the vertex likelihood"
+    )
     submit_parser.add_argument("--seed", type=int, default=12345)
     submit_parser.add_argument("--jobs", type=int, default=16)
     submit_parser.add_argument("--request-memory", type=int, default=32768)

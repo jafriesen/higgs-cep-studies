@@ -979,8 +979,13 @@ def evaluate_fold(state, model, calibrator, args, fold, auxiliary_fit=None):
         "probability_histograms": probability_histograms,
         "mg_above_squared": mg_above_squared,
         "mg_base_above_squared": mg_base_above_squared,
-        "tail_rows": np.concatenate(tail_rows),
-        "tail_event_yields": np.concatenate(tail_event_yields),
+        # empty when the profile has no accidental-proton (pooled) component
+        "tail_rows": np.concatenate(tail_rows) if tail_rows else np.zeros(0, dtype=np.int64),
+        "tail_event_yields": (
+            np.concatenate(tail_event_yields)
+            if tail_event_yields
+            else np.zeros((0, tail_efficiencies.size))
+        ),
         "tail_signal_yields": tail_signal_yields,
         "tail_thresholds": score_edges[tail_bins],
     }

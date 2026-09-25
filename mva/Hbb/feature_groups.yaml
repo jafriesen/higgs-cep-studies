@@ -1,0 +1,45 @@
+kinematics:
+- jet1_pt
+- jet2_pt
+- jet1_pt_over_mjj
+- jet2_pt_over_mjj
+- jet1_eta
+- jet2_eta
+- delta_eta_jj
+- delta_phi_jj
+- dijet_pt
+- dijet_rapidity
+- dijet_mass
+- pt_asymmetry
+structure:
+- jet_multiplicity
+- jet1_ncharged
+- jet2_ncharged
+- jet1_pull_magnitude
+- jet2_pull_magnitude
+activity:
+- n_tracks_outside_jets
+- sum_track_pt_outside_jets
+- n_tracks_outside_pt2
+- sum_track_pt_outside_pt2
+- max_track_pt_outside_jets
+- n_tracks_transverse
+- sum_track_pt_transverse
+- n_tracks_outer_positive
+- n_tracks_outer_negative
+- sum_track_pt_outer_positive
+- sum_track_pt_outer_negative
+- eta_rms_outside
+gaps:
+- sum_gap_size
+- minimum_gap_size
+- leading_track_jet_fraction
+- n_extra_track_jets
+- n_outer_track_jets
+- leading_outer_track_jet_pt
+- interjet_bridge_asymmetry_projected
+protons:
+- yx_minus_dijet_rapidity
+- jet1_mass_estimator
+pileup:
+- n_vertices

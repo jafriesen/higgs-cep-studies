@@ -365,6 +365,23 @@ profiles:
     corrections: true
     max_abs_jet_eta: 3.0
     track_min_pt_gev: 0.5
+  # Reference for "inclusive background fully rejected": the nominal selection with
+  # only the exclusive processes, so the classifier is trained against them alone.
+  fsr_mtd_exclusive_only_gg_cc:
+    feature_set: new_list_mass_estimator
+    components: [Hbb_fsr, QCDbb_fsr, QCDgg_fsr, QEDbb_fsr, QCDcc_fsr, QEDcc_fsr]
+    class_map:
+      Hbb_fsr: Hbb
+      QCDbb_fsr: exclusive_QCDbb
+      QCDgg_fsr: exclusive_QCDgg
+      QEDbb_fsr: exclusive_QEDbb
+      QCDcc_fsr: exclusive_QCDcc
+      QEDcc_fsr: exclusive_QEDcc
+    proton_backend: analytic
+    jets: leading
+    corrections: true
+    max_abs_jet_eta: 3.0
+    track_min_pt_gev: 0.5
   nominal_three_class:
     components: [Hbb, QCDbb, QCDbb_madgraph]
     class_map:
