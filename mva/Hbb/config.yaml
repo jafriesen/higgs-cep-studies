@@ -113,6 +113,23 @@ feature_sets:
     # branches, which are zero in the current production.
     - jet1_pull_magnitude
     - jet2_pull_magnitude
+  # Reduced list for the paper: one idea per block.  Proton-dijet consistency
+  # (required), dijet kinematics, and exclusivity (rapidity gaps and charged
+  # activity outside the jets).  Chosen from the grouped drop-and-retrain and the
+  # tail SHAP ranking of new_list_mass_estimator (2026-09-24).
+  paper_12:
+    - yx_minus_dijet_rapidity
+    - jet1_pt
+    - jet2_pt
+    - delta_eta_jj
+    - delta_phi_jj
+    - dijet_pt
+    - sum_gap_size
+    - eta_rms_outside
+    - n_tracks_outside_jets
+    - sum_track_pt_outside_jets
+    - n_tracks_transverse
+    - max_track_pt_outside_jets
   # The 48 used by significance_v3_all_campaigns; kept for the parity control.
   legacy_locked:
     - jet1_pt_over_mjj
